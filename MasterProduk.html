@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    body { background-color: #f8f9fa; font-family: 'Roboto', sans-serif; overflow-x: hidden; }
+    .content { margin-left: 250px; padding: 30px; transition: all 0.3s; }
+    .card { border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border-radius: 8px; }
+    .table thead th { background-color: #e9ecef; color: #495057; font-weight: 600; border-bottom: 2px solid #dee2e6; }
+    .col-notes { max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #666; font-style: italic; }
+    .form-control[readonly] { background-color: #e9ecef; color: #495057; font-weight: bold; }
+    .search-container { background-color: #fff; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+    .search-label { font-size: 12px; font-weight: bold; color: #6c757d; margin-bottom: 5px; display: block; }
+  </style>
+</head>
+<body>
+
+  <?!= include('Sidebar', {scriptUrl: scriptUrl, page: page}); ?>
+
+  <div class="content">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h3 class="fw-bold m-0">Master Produk</h3>
+        <span class="text-muted small">Daftar Referensi Barang (Urutan: Terbaru)</span>
+      </div>
+      <button class="btn btn-primary shadow-sm" onclick="bukaModal(false)">
+        <i class="material-icons" style="font-size:18px; vertical-align:sub; margin-right:5px;">add_circle</i>
+        Tambah Produk
+      </button>
+    </div>
+
+    <div class="search-container">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <span class="search-label">KODE BARANG</span>
+          <input type="text" id="searchKode" class="form-control form-control-sm" placeholder="Cari Kode..." onkeyup="filterData()">
+        </div>
+        <div class="col-md-4">
+          <span class="search-label">NAMA PRODUK</span>
+          <input type="text" id="searchNama" class="form-control form-control-sm" placeholder="Cari Nama Produk..." onkeyup="filterData()">
+        </div>
+        <div class="col-md-3">
+          <span class="search-label">BRAND</span>
+          <input type="text" id="searchBrand" class="form-control form-control-sm" placeholder="Cari Brand..." onkeyup="filterData()">
+        </div>
+        <div class="col-md-2 text-end">
+           <button class="btn btn-outline-secondary btn-sm w-100" onclick="resetSearch()">
+             <i class="material-icons" style="font-size:16px; vertical-align:middle">refresh</i> Reset Filter
+           </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body p-0">
+        <table class="table table-hover mb-0 align-middle">
+          <thead>
+            <tr>
+              <th width="15%" class="ps-4">Kode Barang</th>
+              <th width="30%">Nama Produk</th>
+              <th width="20%">Brand</th>
+              <th width="25%">Notes</th>
+              <th width="10%" class="text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tabelBody">
+            <tr><td colspan="5" class="text-center py-5 text-muted">Memuat data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalForm" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title fw-bold" id="modalTitle">Input Produk Baru</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formProduk">
+            <input type="hidden" id="isEditMode" value="false">
+
+            <div class="mb-3">
+              <label class="form-label fw-bold small text-muted">KODE BARANG (AUTO/LOCKED)</label>
+              <input type="text" class="form-control" id="kode" placeholder="Generating..." readonly>
+              <div class="form-text small" id="kodeInfo"><i class="material-icons" style="font-size:12px">info</i> Kode ini dibuat otomatis oleh sistem.</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold small text-muted">NAMA PRODUK</label>
+              <input type="text" class="form-control" id="nama" placeholder="Misal: Travel Kit Whitening" required>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label fw-bold small text-muted">BRAND</label>
+                  <input type="text" class="form-control" id="brand" placeholder="Misal: Klavuu">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label fw-bold small text-muted">NOTES (Opsional)</label>
+                  <input type="text" class="form-control" id="notes" placeholder="Contoh: Barang Pecah Belah">
+                </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="button" class="btn btn-primary" onclick="simpan()">Simpan Data</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    let globalData = [];
+    var myModal;
+
+    document.addEventListener("DOMContentLoaded", loadData);
+
+    // FUNGSI BUKA MODAL (Bisa Mode Tambah / Mode Edit)
+    function bukaModal(editMode, kode = null) {
+      myModal = new bootstrap.Modal(document.getElementById('modalForm'));
+      document.getElementById("formProduk").reset();
+      
+      const titleEl = document.getElementById("modalTitle");
+      const kodeInfoEl = document.getElementById("kodeInfo");
+      const isEditEl = document.getElementById("isEditMode");
+
+      if (editMode) {
+        // --- MODE EDIT ---
+        isEditEl.value = "true";
+        titleEl.innerText = "Edit Produk";
+        kodeInfoEl.innerHTML = '<i class="material-icons" style="font-size:12px">lock</i> Kode Barang tidak dapat diubah.';
+        
+        // Cari data di variable globalData berdasarkan Kode
+        const rowData = globalData.find(row => row[0] === kode);
+        
+        if (rowData) {
+          // Isi Form dengan data lama
+          document.getElementById("kode").value = rowData[0];
+          document.getElementById("nama").value = rowData[1];
+          document.getElementById("brand").value = rowData[2];
+          document.getElementById("notes").value = rowData[3];
+        }
+
+      } else {
+        // --- MODE TAMBAH ---
+        isEditEl.value = "false";
+        titleEl.innerText = "Input Produk Baru";
+        kodeInfoEl.innerHTML = '<i class="material-icons" style="font-size:12px">info</i> Kode ini dibuat otomatis oleh sistem.';
+        
+        document.getElementById("kode").value = "Loading...";
+        google.script.run.withSuccessHandler(function(nextId) {
+          document.getElementById("kode").value = nextId;
+        }).getNextId();
+      }
+
+      myModal.show();
+    }
+
+    function loadData() {
+      google.script.run.withSuccessHandler(function(data) {
+        globalData = data;
+        renderTable(globalData);
+      }).getMasterData();
+    }
+
+    function resetSearch() {
+      document.getElementById("searchKode").value = "";
+      document.getElementById("searchNama").value = "";
+      document.getElementById("searchBrand").value = "";
+      renderTable(globalData);
+    }
+
+    function filterData() {
+      const termKode = document.getElementById("searchKode").value.toLowerCase();
+      const termNama = document.getElementById("searchNama").value.toLowerCase();
+      const termBrand = document.getElementById("searchBrand").value.toLowerCase();
+      
+      const filtered = globalData.filter(row => {
+        const kode = String(row[0]).toLowerCase();
+        const nama = String(row[1]).toLowerCase();
+        const brand = String(row[2]).toLowerCase();
+        return (termKode === "" || kode.includes(termKode)) && 
+               (termNama === "" || nama.includes(termNama)) && 
+               (termBrand === "" || brand.includes(termBrand));
+      });
+      renderTable(filtered);
+    }
+
+    function renderTable(data) {
+      const tbody = document.getElementById("tabelBody");
+      tbody.innerHTML = "";
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">Data tidak ditemukan.</td></tr>';
+        return;
+      }
+      data.forEach(row => {
+        const tr = document.createElement("tr");
+        const notesData = row[3] ? row[3] : "-";
+        
+        // Tambahkan tombol EDIT di sini
+        tr.innerHTML = `
+          <td class="ps-4 fw-bold text-primary">${row[0]}</td>
+          <td class="fw-bold">${row[1]}</td>
+          <td><span class="badge bg-light text-dark border">${row[2]}</span></td>
+          <td class="col-notes" title="${notesData}">${notesData}</td>
+          <td class="text-center">
+            <div class="btn-group">
+              <button class="btn btn-outline-primary btn-sm" onclick="bukaModal(true, '${row[0]}')" title="Edit">
+                <i class="material-icons" style="font-size:16px">edit</i>
+              </button>
+              <button class="btn btn-outline-danger btn-sm" onclick="hapus('${row[0]}')" title="Hapus">
+                <i class="material-icons" style="font-size:16px">delete</i>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function simpan() {
+      const btn = document.querySelector('button[onclick="simpan()"]');
+      const textAsli = btn.innerHTML;
+      btn.innerHTML = "Menyimpan...";
+      btn.disabled = true;
+
+      const isEdit = document.getElementById("isEditMode").value === "true";
+      
+      const form = {
+        kode: document.getElementById("kode").value, // Kode dikirim (Penting buat Edit)
+        nama: document.getElementById("nama").value,
+        brand: document.getElementById("brand").value || "-",
+        notes: document.getElementById("notes").value || "-"
+      };
+
+      if (!form.nama) {
+        Swal.fire("Peringatan", "Nama Produk wajib diisi.", "warning");
+        btn.innerHTML = textAsli;
+        btn.disabled = false;
+        return;
+      }
+
+      // Handler Sukses
+      const onSuccess = (res) => {
+        btn.innerHTML = textAsli;
+        btn.disabled = false;
+        if (res.success) {
+          Swal.fire({ icon: 'success', title: 'Berhasil!', text: res.message, showConfirmButton: false, timer: 1500 });
+          myModal.hide();
+          loadData();
+        } else {
+          Swal.fire("Gagal", res.message, "error");
+        }
+      };
+
+      // Tentukan Fungsi Backend yang dipanggil
+      if (isEdit) {
+        // Panggil Update
+        google.script.run.withSuccessHandler(onSuccess).updateMasterData(form);
+      } else {
+        // Panggil Add
+        google.script.run.withSuccessHandler(onSuccess).addMasterData(form);
+      }
+    }
+    
+    function hapus(kode) {
+      Swal.fire({ title: 'Hapus?', text: "Data hilang permanen.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Ya' }).then((result) => {
+        if (result.isConfirmed) {
+          google.script.run.withSuccessHandler(res => {
+             if(res.success) { loadData(); Swal.fire('Terhapus!', '', 'success'); } 
+             else { Swal.fire('Error', res.message, 'error'); }
+          }).deleteMasterData(kode);
+        }
+      });
+    }
+  </script>
+</body>
+</html>

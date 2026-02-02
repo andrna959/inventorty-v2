@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+  
+  <style>
+    /* --- THEME CONFIG --- */
+    :root { 
+      --primary: #2563eb; 
+      --bg-body: #f8f9fa; 
+      --card-bg: #ffffff;
+      --border-color: #e9ecef;
+      --text-label: #64748b;
+      --text-dark: #1e293b;
+      --error-bg: #fef2f2;
+      --error-border: #fca5a5;
+      --error-text: #b91c1c;
+    }
+
+    body { 
+      background-color: var(--bg-body); 
+      font-family: 'Inter', sans-serif; 
+      color: var(--text-dark);
+      font-size: 14px;
+    }
+
+    input[type="text"], textarea, .form-control { text-transform: uppercase; }
+
+    .content { margin-left: 250px; padding: 25px 40px; transition: all 0.3s; }
+
+    .odoo-header {
+      background: white; border-bottom: 1px solid var(--border-color); padding: 15px 30px;
+      display: flex; justify-content: space-between; align-items: center;
+      position: sticky; top: 0; z-index: 99; 
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+      margin: -25px -40px 30px -40px;
+    }
+    .status-badge { font-size: 13px; font-weight: 700; padding: 8px 16px; border-radius: 6px; }
+    .status-draft { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
+    .status-done { background: #dcfce7; color: #166534; border: 1px solid #86efac; display: none; }
+
+    .card-clean {
+      background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 30px;
+    }
+    .card-header-clean {
+      padding: 15px 25px; border-bottom: 1px solid var(--border-color);
+      font-weight: 700; color: var(--primary); text-transform: uppercase; font-size: 12px;
+      background: #fff; border-radius: 12px 12px 0 0; letter-spacing: 0.5px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .card-body-clean { padding: 30px; }
+
+    .form-label { font-size: 11px; font-weight: 600; color: var(--text-label); text-transform: uppercase; margin-bottom: 6px; }
+    .form-control, .form-select { border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 15px; font-size: 14px; }
+    .form-control:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
+    
+    /* MODAL STYLE */
+    .modal-content { border: none; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+    .modal-header { padding: 20px 30px; border-bottom: 1px solid #f1f5f9; }
+    
+    .modal-section-search { padding: 25px 30px 10px 30px; background: #fff; }
+    .product-display-card {
+      background: #eff6ff; border: 1px solid #dbeafe; border-radius: 10px; padding: 15px 20px;
+      margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;
+    }
+    
+    /* INFO MASTER SELALU MUNCUL (KONSISTEN) */
+    .master-note-box {
+      background: #fef2f2; 
+      border-left: 4px solid #dc2626; 
+      padding: 12px 15px; 
+      border-radius: 4px; 
+      font-size: 13px; 
+      color: #dc2626; 
+      font-weight: 700; 
+      margin-bottom: 20px;
+      /* Hapus display:none agar selalu tampil */
+    }
+
+    .product-title { font-size: 16px; font-weight: 700; color: #1e3a8a; margin-bottom: 2px; }
+    .product-brand { font-size: 12px; color: #60a5fa; font-weight: 600; text-transform: uppercase; }
+    .hidden-logic-input { position: absolute; opacity: 0; pointer-events: none; }
+
+    .modal-section-main { padding: 0 30px 20px 30px; }
+    .qty-input { font-size: 24px; font-weight: 800; color: var(--primary); text-align: center; letter-spacing: 1px; }
+    .modal-section-details { background: #f8fafc; padding: 25px 30px; border-top: 1px solid #e2e8f0; border-radius: 0 0 16px 16px; }
+
+    .table-custom thead th { background: #f8f9fa; color: #64748b; font-size: 11px; font-weight: 700; padding: 15px; border-bottom: 2px solid #e2e8f0; }
+    .table-custom tbody td { padding: 15px; vertical-align: middle; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+    
+    .row-error { background-color: var(--error-bg) !important; border-left: 4px solid #ef4444; }
+    .text-error-msg { color: #dc2626; font-size: 11px; font-weight: 700; display: block; margin-top: 4px; }
+    
+    .btn-primary-custom { background: var(--primary); border: none; padding: 12px 30px; font-weight: 600; border-radius: 8px; color: white; transition: 0.2s; }
+    .btn-primary-custom:hover { background: #1d4ed8; transform: translateY(-1px); }
+    .btn-add-big { background: #fff; border: 1px dashed #cbd5e1; color: var(--primary); width: 100%; padding: 15px; border-radius: 8px; font-weight: 600; transition: 0.2s; }
+    .btn-add-big:hover { background: #eff6ff; border-color: var(--primary); }
+    .btn-excel { font-size: 12px; font-weight: 600; padding: 8px 16px; border-radius: 6px; }
+
+  </style>
+</head>
+<body>
+
+  <?!= include('Sidebar', {scriptUrl: scriptUrl, page: page}); ?>
+
+  <div class="content">
+    
+    <div class="odoo-header">
+      <div class="d-flex align-items-center gap-3">
+        <span id="status-draft" class="status-badge status-draft">DRAFT / BARU</span>
+        <span id="status-done" class="status-badge status-done">
+            <i class="material-icons align-middle me-1" style="font-size:16px;">check_circle</i> 
+            <span id="final-trx-id">IN-XXXX</span>
+        </span>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-light border fw-bold text-muted btn-sm px-3" onclick="resetAll()">BUAT BARU</button>
+        <button id="btn-validate" class="btn-primary-custom d-flex align-items-center py-2 px-4" onclick="validateDocument()">
+          <i class="material-icons me-2" style="font-size:18px;">save</i> VALIDATE & SAVE
+        </button>
+      </div>
+    </div>
+
+    <div class="card-clean">
+      <div class="card-header-clean"><span class="d-flex align-items-center"><i class="material-icons align-middle me-2">description</i> Informasi Dokumen</span></div>
+      <div class="card-body-clean">
+        <div class="row g-4">
+          <div class="col-md-3"><label class="form-label">Tanggal Masuk <span class="text-danger">*</span></label><input type="date" class="form-control" id="h-tanggal"></div>
+          <div class="col-md-3"><label class="form-label">Shipment Ke</label><input type="text" class="form-control" id="h-shipment" placeholder="Contoh: SHIPMENT-01"></div>
+          <div class="col-md-3"><label class="form-label text-primary">PO Produk <span class="text-danger">*</span></label><input type="text" class="form-control fw-bold bg-light" id="h-poProduk" placeholder="PO-2026-001"></div>
+          <div class="col-md-3"><label class="form-label text-primary">PO Sticker <span class="text-danger">*</span></label><input type="text" class="form-control fw-bold bg-light" id="h-poSticker" placeholder="Wajib Diisi"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-clean">
+      <div class="card-header-clean">
+        <span class="d-flex align-items-center"><i class="material-icons align-middle me-2">toc</i> Daftar Barang (Draft)</span>
+        <div class="d-flex gap-2">
+           <button class="btn btn-outline-success btn-excel d-flex align-items-center" onclick="downloadTemplate()">
+             <i class="material-icons me-1" style="font-size:16px">download</i> Template CSV
+           </button>
+           <button class="btn btn-success btn-excel d-flex align-items-center" onclick="document.getElementById('fileExcel').click()">
+             <i class="material-icons me-1" style="font-size:16px">upload_file</i> Import CSV
+           </button>
+           <input type="file" id="fileExcel" accept=".csv" style="display:none" onchange="handleFileExcel(this)">
+           <span class="badge bg-secondary ms-2 align-self-center" id="total-items">0 Item</span>
+        </div>
+      </div>
+
+      <div class="card-body-clean p-0">
+        <div class="table-responsive">
+          <table class="table table-custom table-hover mb-0">
+            <thead>
+              <tr>
+                <th width="5%" class="text-center">#</th>
+                <th width="30%">Nama Barang / Kode</th>
+                <th width="15%">Detail Batch</th>
+                <th width="10%" class="text-center">Qty</th>
+                <th width="15%">Lokasi</th>
+                <th width="15%">Atribut</th>
+                <th width="10%" class="text-end">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="cart-body">
+              <tr><td colspan="7" class="p-5 text-center text-muted">Belum ada barang.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="p-4 bg-light border-top">
+           <button class="btn-add-big" onclick="openInputModal()">
+             <i class="material-icons align-middle me-2">add_circle_outline</i> KLIK UNTUK MENAMBAH BARANG
+           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalInput" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold text-dark"><i class="material-icons align-middle me-2 text-primary">inventory_2</i> Input Barang</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        
+        <div class="modal-section-search">
+            <label class="form-label">Cari Barang</label>
+            <div class="input-group mb-3">
+              <span class="input-group-text bg-white"><i class="material-icons text-muted">search</i></span>
+              <input class="form-control form-control-lg" list="listProduk" id="i-kode" placeholder="Ketik Kode / Nama Barang..." onchange="isiOtomatis()" autocomplete="off">
+              <button class="btn btn-dark px-4" onclick="bukaScanner()"><i class="material-icons align-middle me-2">qr_code</i> SCAN</button>
+            </div>
+            <datalist id="listProduk"></datalist>
+            <input type="hidden" id="i-kode-asli">
+
+            <input type="text" id="i-nama" class="hidden-logic-input">
+            <input type="text" id="i-brand" class="hidden-logic-input">
+            <input type="text" id="i-notes-master" class="hidden-logic-input">
+
+            <div class="product-display-card">
+               <div>
+                  <div class="product-title" id="disp-nama">- Pilih Barang Dulu -</div>
+                  <div class="product-brand" id="disp-brand">BRAND: -</div>
+               </div>
+               <div class="text-end"><i class="material-icons text-primary opacity-25" style="font-size: 32px">verified</i></div>
+            </div>
+
+            <div id="masterNoteBox" class="master-note-box">
+               <div class="d-flex align-items-center mb-1">
+                  <i class="material-icons me-1" style="font-size:16px">warning</i> Info Produk (Master):
+               </div>
+               <div id="textMasterNote" class="fst-italic text-uppercase">-</div>
+            </div>
+        </div>
+
+        <div class="modal-section-main">
+            <div class="row g-3">
+               <div class="col-md-4">
+                  <label class="form-label text-primary fw-bold">Qty Masuk <span class="text-danger">*</span></label>
+                  <input type="number" class="form-control form-control-lg qty-input border-primary" id="i-qty" placeholder="0">
+               </div>
+               <div class="col-md-4">
+                  <label class="form-label text-primary fw-bold">Type Lokasi <span class="text-danger">*</span></label>
+                  <select class="form-select form-select-lg" id="i-typeLoc" onchange="filterLokasiRak()">
+                    <option value="">- Pilih -</option>
+                    <option value="Excel">EXCEL (ECER)</option>
+                    <option value="Koli">KOLI (BOX)</option>
+                  </select>
+               </div>
+               <div class="col-md-4">
+                  <label class="form-label text-primary fw-bold">Lokasi Rak <span class="text-danger">*</span></label>
+                  <select class="form-select form-select-lg fw-bold" id="i-lokasi" disabled><option value="">Pilih Type Dulu</option></select>
+               </div>
+            </div>
+        </div>
+
+        <div class="modal-section-details">
+            <div class="d-flex align-items-center mb-3">
+               <i class="material-icons text-muted me-2" style="font-size:18px">tune</i>
+               <label class="form-label text-dark fw-bold m-0" style="letter-spacing: 0.5px;">DETAIL BATCH & SPESIFIKASI</label>
+            </div>
+
+            <div class="row g-3 mb-3">
+               <div class="col-md-6"><label class="form-label">Nomor Batch</label><input type="text" class="form-control" id="i-batch" placeholder="BATCH NO"></div>
+               <div class="col-md-6"><label class="form-label">Expired Date</label><input type="date" class="form-control" id="i-exp"></div>
+            </div>
+            <div class="row g-3 mb-3">
+               <div class="col-md-4"><label class="form-label">Type Sticker</label><select class="form-select form-select-sm" id="i-sticker"><option value="">- Pilih -</option></select></div>
+               <div class="col-md-4"><label class="form-label">Size Cover</label><select class="form-select form-select-sm" id="i-cover"><option value="">- Pilih -</option></select></div>
+               <div class="col-md-4"><label class="form-label">Size Produk</label><select class="form-select form-select-sm" id="i-size"><option value="">- Pilih -</option></select></div>
+            </div>
+            
+            <div><label class="form-label">Catatan (Manual)</label><input type="text" class="form-control" id="i-ket" placeholder="Tulis keterangan tambahan jika perlu..."></div>
+            
+            <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                <button type="button" class="btn btn-light text-muted fw-bold px-4" data-bs-dismiss="modal">BATAL</button>
+                <button type="button" class="btn-primary-custom px-5" id="btn-save-item" onclick="addToCart()">
+                  <i class="material-icons align-middle me-2">add_shopping_cart</i> MASUKKAN KE DAFTAR
+                </button>
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalScanner" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content bg-black">
+        <div class="modal-body p-0"><div id="reader"></div></div>
+        <div class="modal-footer border-0 p-2 justify-content-center bg-black"><button class="btn btn-sm btn-outline-light w-100" onclick="stopScanner()">Tutup Kamera</button></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    let cart = [];
+    let masterProduk = [];
+    let globalLokasiData = [];
+    let modalInputBS, modalScannerBS;
+    let html5QrcodeScanner = null;
+    let editingIndex = -1;
+    let appConfig = null; 
+
+    document.addEventListener("DOMContentLoaded", function() {
+      document.getElementById('h-tanggal').valueAsDate = new Date();
+      modalInputBS = new bootstrap.Modal(document.getElementById('modalInput'));
+      modalScannerBS = new bootstrap.Modal(document.getElementById('modalScanner'));
+      loadFromStorage();
+      
+      google.script.run.withSuccessHandler(cfg => { appConfig = cfg; }).getAppConfig();
+
+      google.script.run.withSuccessHandler(d => {
+        masterProduk = d;
+        let list = document.getElementById("listProduk");
+        list.innerHTML = "";
+        d.forEach(r => { let opt = document.createElement("option"); opt.value = r[0]; opt.label = r[1]; list.appendChild(opt); });
+      }).getMasterData();
+
+      google.script.run.withSuccessHandler(d => {
+         globalLokasiData = d.lokasi;
+         isiDropdown('i-size', d.size);
+         isiDropdown('i-sticker', d.typeSticker);
+         isiDropdown('i-cover', d.sizeCover);
+      }).getSupportingData();
+    });
+
+    // --- IMPORT CSV LOGIC ---
+    function downloadTemplate() {
+       if(!appConfig) { alert("Config belum termuat, tunggu sebentar."); return; }
+       const headers = appConfig.CSV_TEMPLATE.HEADERS.join(",");
+       const example = appConfig.CSV_TEMPLATE.EXAMPLE.join(",");
+       const csvContent = "data:text/csv;charset=utf-8," + headers + "\n" + example;
+       const encodedUri = encodeURI(csvContent);
+       const link = document.createElement("a");
+       link.setAttribute("href", encodedUri);
+       link.setAttribute("download", "Template_Inbound.csv");
+       document.body.appendChild(link);
+       link.click();
+    }
+
+    function handleFileExcel(input) {
+       const file = input.files[0];
+       if(!file) return;
+       const reader = new FileReader();
+       reader.onload = function(e) {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, {type: 'array'});
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, {defval: ""}); 
+          processCSVData(jsonData);
+          input.value = ""; 
+       };
+       reader.readAsArrayBuffer(file);
+    }
+
+    function formatExcelDate(raw) {
+       if (!raw || raw === "-" || raw === "") return "";
+       if (!isNaN(raw) && raw > 10000) {
+           let date = new Date(Math.round((raw - 25569) * 86400 * 1000));
+           return date.toISOString().split('T')[0]; 
+       }
+       let date = new Date(raw);
+       if (!isNaN(date.getTime())) {
+           const offset = date.getTimezoneOffset();
+           date = new Date(date.getTime() - (offset*60*1000));
+           return date.toISOString().split('T')[0];
+       }
+       return ""; 
+    }
+
+    function processCSVData(data) {
+       let successCount = 0;
+       let errorCount = 0;
+
+       data.forEach((row, index) => {
+          let errors = [];
+          let kode = (row['KODE'] || row['kode'] || "").toString().trim().toUpperCase();
+          let qty = parseInt(row['QTY'] || row['qty'] || 0);
+          let type = (row['TYPE'] || row['type'] || "").toString().trim(); 
+          let lokasi = (row['LOKASI'] || row['lokasi'] || "").toString().trim().toUpperCase();
+          let batch = (row['BATCH'] || row['batch'] || "").toString().trim().toUpperCase() || "-";
+          let rawExp = (row['EXP'] || row['exp'] || "");
+          let exp = formatExcelDate(rawExp); 
+          let sticker = (row['STICKER'] || row['sticker'] || "").toString().trim().toUpperCase() || "-";
+          let cover = (row['COVER'] || row['cover'] || "").toString().trim().toUpperCase() || "-";
+          let size = (row['SIZE'] || row['size'] || "").toString().trim().toUpperCase() || "-";
+          let ket = (row['KET'] || row['ket'] || "").toString().trim().toUpperCase();
+
+          let foundProd = masterProduk.find(p => p[0] === kode);
+          let namaProd = foundProd ? foundProd[1] : "TIDAK DITEMUKAN";
+          let brandProd = foundProd ? foundProd[2] : "-";
+          let notesMaster = foundProd ? foundProd[3] : "";
+
+          if(!foundProd) errors.push("Kode Barang Tidak Terdaftar");
+          if(qty <= 0 || isNaN(qty)) errors.push("Qty Wajib > 0");
+          type = type.charAt(0).toUpperCase() + type.slice(1).toLowerCase(); 
+          if(type !== "Excel" && type !== "Koli") errors.push("Type Lokasi Salah");
+          let validLoc = globalLokasiData.find(x => x.startsWith(lokasi));
+          if(!validLoc) { errors.push("Kode Lokasi Tidak Ada"); } 
+          else if (!validLoc.includes(type)) { errors.push(`Lokasi ${lokasi} bukan tipe ${type}`); }
+
+          let isValidRow = (errors.length === 0);
+          if(isValidRow) successCount++; else errorCount++;
+
+          // Gabungkan Notes Master + Manual (CSV)
+          let finalNotes = notesMaster;
+          if (ket) { if (finalNotes) finalNotes += " | " + ket; else finalNotes = ket; }
+
+          let newItem = {
+             kodeBarang: kode, namaProduk: namaProd, brand: brandProd,
+             qtyMasuk: qty, typeLokasi: type, lokasi: lokasi,
+             noBatch: batch, expiredDate: exp,
+             typeSticker: sticker, sizeCover: cover, size: size, keterangan: finalNotes,
+             isValid: isValidRow, errorMsg: errors.join(", ")
+          };
+
+          let existingIndex = cart.findIndex(c => 
+             c.kodeBarang === newItem.kodeBarang && c.lokasi === newItem.lokasi && c.noBatch === newItem.noBatch && 
+             c.typeLokasi === newItem.typeLokasi && c.expiredDate === newItem.expiredDate &&
+             c.typeSticker === newItem.typeSticker && c.sizeCover === newItem.sizeCover && c.size === newItem.size
+          );
+
+          if (existingIndex !== -1) {
+             cart[existingIndex].qtyMasuk += newItem.qtyMasuk;
+             if(!isValidRow) {
+                 cart[existingIndex].isValid = false;
+                 cart[existingIndex].errorMsg += " | " + newItem.errorMsg;
+             }
+          } else {
+             cart.push(newItem);
+          }
+       });
+
+       saveToStorage();
+       renderCart();
+
+       if(errorCount > 0) {
+          Swal.fire({ icon: 'warning', title: 'Import Selesai dengan Revisi', html: `Berhasil: <b>${successCount}</b><br>Perlu Revisi: <b class="text-danger">${errorCount}</b> baris berwarna merah.` });
+       } else {
+          Swal.fire({ icon: 'success', title: 'Import Sempurna!', text: `Semua ${successCount} data valid.` });
+       }
+    }
+
+    // --- MAIN FUNCTIONS ---
+    function openInputModal() {
+       editingIndex = -1; resetItemForm(); 
+       document.getElementById('btn-save-item').innerHTML = '<i class="material-icons align-middle me-2">add_shopping_cart</i> MASUKKAN KE DAFTAR';
+       modalInputBS.show(); setTimeout(() => document.getElementById('i-kode').focus(), 500); 
+    }
+    
+    function isiOtomatis() {
+      const val = document.getElementById("i-kode").value.trim().toUpperCase(); 
+      const found = masterProduk.find(r => String(r[0]).toUpperCase() === val || String(r[1]).toUpperCase() === val);
+      
+      if (found) { 
+          // Data: [Kode, Nama, Brand, Notes]
+          document.getElementById("i-kode").value = found[0]; document.getElementById("i-kode-asli").value = found[0]; 
+          document.getElementById("i-nama").value = found[1]; document.getElementById("i-brand").value = found[2]; 
+          document.getElementById("disp-nama").innerText = found[1]; document.getElementById("disp-brand").innerText = "BRAND: " + found[2];
+          
+          let masterNote = found[3] || "";
+          document.getElementById("i-notes-master").value = masterNote;
+          
+          // REVISI LOGIKA TAMPILAN: JIKA KOSONG, ISI "-"
+          let displayText = (masterNote && masterNote.trim() !== "" && masterNote !== "-") ? masterNote : "-";
+          document.getElementById("textMasterNote").innerText = displayText;
+
+          document.getElementById("i-qty").focus(); 
+      }
+    }
+
+    function addToCart() {
+       let notesMaster = document.getElementById('i-notes-master').value;
+       let notesManual = document.getElementById('i-ket').value.toUpperCase();
+       
+       let finalNotes = notesMaster;
+       if (notesManual) {
+           if (finalNotes) finalNotes += " | " + notesManual;
+           else finalNotes = notesManual;
+       }
+
+       let item = {
+          kodeBarang: document.getElementById('i-kode-asli').value || document.getElementById('i-kode').value.toUpperCase(),
+          namaProduk: document.getElementById('i-nama').value,
+          brand: document.getElementById('i-brand').value,
+          qtyMasuk: parseInt(document.getElementById('i-qty').value),
+          typeLokasi: document.getElementById('i-typeLoc').value,
+          lokasi: document.getElementById('i-lokasi').value,
+          noBatch: document.getElementById('i-batch').value.toUpperCase(),
+          expiredDate: document.getElementById('i-exp').value,
+          typeSticker: document.getElementById('i-sticker').value,
+          sizeCover: document.getElementById('i-cover').value,
+          size: document.getElementById('i-size').value,
+          keterangan: finalNotes, 
+          isValid: true, errorMsg: "" 
+       };
+
+       if(!item.kodeBarang || !item.qtyMasuk || !item.typeLokasi || !item.lokasi) {
+          Swal.fire({icon: 'warning', title: 'Data Belum Lengkap', text: 'Pastikan Kode, Qty, Type Lokasi, dan Lokasi Rak terisi!'}); return;
+       }
+
+       if(editingIndex >= 0) {
+          cart[editingIndex] = item;
+          Swal.fire({icon: 'success', title: 'Diperbarui', toast: true, position: 'top-end', showConfirmButton: false, timer: 1000});
+       } else {
+          let existingIndex = cart.findIndex(c => 
+             c.kodeBarang === item.kodeBarang && c.lokasi === item.lokasi && c.noBatch === newItem.noBatch && 
+             c.typeLokasi === newItem.typeLokasi && c.expiredDate === newItem.expiredDate &&
+             c.typeSticker === newItem.typeSticker && c.sizeCover === newItem.sizeCover && c.size === newItem.size
+          );
+          if (existingIndex !== -1) {
+             cart[existingIndex].qtyMasuk += item.qtyMasuk;
+             Swal.fire({icon: 'info', title: 'Digabungkan', text: `Qty menjadi ${cart[existingIndex].qtyMasuk}`, toast: true, position: 'top-end', showConfirmButton: false, timer: 1500});
+          } else {
+             cart.push(item);
+             Swal.fire({icon: 'success', title: 'Ditambahkan', toast: true, position: 'top-end', showConfirmButton: false, timer: 1000});
+          }
+       }
+       saveToStorage(); renderCart(); modalInputBS.hide();
+    }
+
+    function editCart(index) {
+       editingIndex = index; let item = cart[index];
+       document.getElementById('i-kode').value = item.kodeBarang; document.getElementById('i-kode-asli').value = item.kodeBarang;
+       isiOtomatis(); 
+       document.getElementById('i-qty').value = item.qtyMasuk; document.getElementById('i-typeLoc').value = item.typeLokasi;
+       filterLokasiRak(); document.getElementById('i-lokasi').value = item.lokasi;
+       document.getElementById('i-batch').value = item.noBatch; document.getElementById('i-exp').value = item.expiredDate;
+       document.getElementById('i-sticker').value = item.typeSticker; document.getElementById('i-cover').value = item.sizeCover;
+       document.getElementById('i-size').value = item.size; 
+       
+       document.getElementById('i-ket').value = ""; 
+       
+       document.getElementById('btn-save-item').innerHTML = '<i class="material-icons align-middle me-2">save</i> UPDATE BARANG';
+       modalInputBS.show();
+    }
+
+    function renderCart() {
+       let tbody = document.getElementById('cart-body'); tbody.innerHTML = "";
+       if(cart.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="p-5 text-center"><div class="text-muted mb-3" style="opacity: 0.5"><i class="material-icons" style="font-size: 48px">shopping_basket</i></div><div class="text-muted fw-bold">Belum ada barang di daftar.</div><button class="btn btn-outline-primary btn-sm mt-3" onclick="openInputModal()">+ Tambah Barang</button></td></tr>`;
+          document.getElementById('total-items').innerText = "0 Item"; return;
+       }
+       
+       let invalidCount = 0;
+       cart.forEach((item, index) => {
+          let rowClass = item.isValid ? "" : "row-error";
+          let errorText = item.isValid ? "" : `<span class="text-error-msg"><i class="material-icons align-middle" style="font-size:12px">error</i> ${item.errorMsg}</span>`;
+          if(!item.isValid) invalidCount++;
+
+          let attrDisplay = [];
+          if(item.size && item.size !== "-") attrDisplay.push(`<span class="badge bg-light text-dark border me-1">SZ: ${item.size}</span>`);
+          if(item.typeSticker && item.typeSticker !== "-") attrDisplay.push(`<span class="badge bg-light text-dark border me-1">ST: ${item.typeSticker}</span>`);
+          
+          let notesDisplay = item.keterangan ? `<div class="small text-danger fst-italic mt-1"><i class="material-icons align-middle" style="font-size:10px">info</i> ${item.keterangan}</div>` : "";
+
+          let tr = document.createElement('tr');
+          tr.className = rowClass;
+          tr.innerHTML = `
+            <td class="text-center fw-bold text-muted">${index + 1}</td>
+            <td><div class="fw-bold text-dark">${item.namaProduk}</div><div class="small text-muted badge bg-light text-dark border">${item.kodeBarang}</div>${errorText}${notesDisplay}</td>
+            <td><div class="small">BATCH: ${item.noBatch || '-'}</div><div class="small text-muted">EXP: ${item.expiredDate || '-'}</div></td>
+            <td class="text-center"><span class="fs-6 fw-bold text-primary">${item.qtyMasuk}</span></td>
+            <td><span class="badge bg-info text-dark" style="font-size:10px">${item.typeLokasi}</span><div class="fw-bold small mt-1 text-dark">${item.lokasi}</div></td>
+            <td>${attrDisplay.join("")}</td>
+            <td class="text-end">
+               <button class="btn btn-sm btn-warning text-white me-1" onclick="editCart(${index})" title="Edit"><i class="material-icons" style="font-size:16px">edit</i></button>
+               <button class="btn btn-sm btn-light text-danger border" onclick="hapusCart(${index})" title="Hapus"><i class="material-icons" style="font-size:16px">delete</i></button>
+            </td>`;
+          tbody.appendChild(tr);
+       });
+       let badgeText = `${cart.length} Item`;
+       if(invalidCount > 0) badgeText += ` <span class="badge bg-danger ms-2">${invalidCount} Error</span>`;
+       document.getElementById('total-items').innerHTML = badgeText;
+    }
+
+    function hapusCart(index) { cart.splice(index, 1); saveToStorage(); renderCart(); }
+
+    function validateDocument() {
+       let header = {
+          tanggalMasuk: document.getElementById('h-tanggal').value,
+          shipmentDate: document.getElementById('h-shipment').value.toUpperCase(),
+          poProduk: document.getElementById('h-poProduk').value.toUpperCase(),
+          poSticker: document.getElementById('h-poSticker').value.toUpperCase()
+       };
+       if(!header.poSticker || !header.poProduk) { Swal.fire("Header Kurang", "PO PRODUK & PO STICKER WAJIB DIISI!", "error"); return; }
+       if(cart.length === 0) { Swal.fire("Kosong", "Belum ada barang di daftar!", "warning"); return; }
+       
+       Swal.fire({ title: 'Validasi Inbound?', text: `Simpan ${cart.length} item ke database?`, icon: 'question', showCancelButton: true, confirmButtonText: 'YA, VALIDASI', confirmButtonColor: '#2563eb' }).then((result) => {
+          if (result.isConfirmed) {
+             let btn = document.getElementById('btn-validate'); let ori = btn.innerHTML; btn.innerHTML = "LOADING..."; btn.disabled = true;
+             google.script.run.withSuccessHandler((res) => {
+                if(res.success) {
+                   Swal.fire("Sukses!", res.message, "success");
+                   document.getElementById('status-draft').style.display = 'none'; document.getElementById('status-done').style.display = 'inline-block'; document.getElementById('final-trx-id').innerText = res.trxId; btn.style.display = 'none';
+                   disableAllInputs(); cart = []; saveToStorage(); renderCart();
+                } else { Swal.fire("Gagal", res.message, "error"); btn.innerHTML = ori; btn.disabled = false; }
+             }).processInboundTransaction(header, cart);
+          }
+       });
+    }
+
+    function resetItemForm() {
+       document.getElementById('i-kode').value = ""; document.getElementById('i-kode-asli').value = "";
+       document.getElementById('i-nama').value = ""; document.getElementById('i-brand').value = ""; document.getElementById('i-notes-master').value = "";
+       document.getElementById('disp-nama').innerText = "- Pilih Barang Dulu -"; document.getElementById('disp-brand').innerText = "BRAND: -";
+       
+       // RESET KOTAK NOTES MASTER: KEMBALI DEFAULT "-"
+       document.getElementById('textMasterNote').innerText = "-"; 
+       
+       document.getElementById('i-qty').value = ""; document.getElementById('i-typeLoc').value = ""; 
+       document.getElementById('i-lokasi').innerHTML = "<option>Pilih Type Dulu</option>"; document.getElementById('i-lokasi').disabled = true;
+       document.getElementById('i-batch').value = ""; document.getElementById('i-exp').value = "";
+       document.getElementById('i-sticker').value = ""; document.getElementById('i-cover').value = "";
+       document.getElementById('i-size').value = ""; document.getElementById('i-ket').value = "";
+    }
+    function resetAll() { if(cart.length > 0) if(!confirm("Reset formulir?")) return; localStorage.removeItem("wms_cart"); location.reload(); }
+    function saveToStorage() { localStorage.setItem("wms_cart", JSON.stringify(cart)); }
+    function loadFromStorage() { let s = localStorage.getItem("wms_cart"); if(s) { cart = JSON.parse(s); renderCart(); } }
+    function disableAllInputs() { document.querySelectorAll('input, button, select').forEach(e => e.disabled = true); document.querySelector('.btn-close').disabled = false; }
+    function filterLokasiRak() {
+        const type = document.getElementById("i-typeLoc").value; const sel = document.getElementById("i-lokasi");
+        sel.innerHTML = '<option value="" disabled selected>Pilih...</option>'; sel.disabled = false;
+        let filtered = globalLokasiData.filter(x => x.includes(type));
+        filtered.forEach(x => { let opt = document.createElement('option'); let parts = x.split(' - '); opt.value = parts[0]; opt.text = parts[0]; sel.appendChild(opt); });
+    }
+    function isiDropdown(id, arr) { let sel = document.getElementById(id); if(arr) arr.forEach(x => { let opt = document.createElement('option'); opt.value = x; opt.text = x; sel.appendChild(opt); }); }
+    function bukaScanner() { modalScannerBS.show(); setTimeout(() => { if (!html5QrcodeScanner) html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 20, qrbox: 200 }, false); html5QrcodeScanner.render(onScanSuccess); }, 500); }
+    function onScanSuccess(txt) { if (html5QrcodeScanner) html5QrcodeScanner.pause(); document.getElementById("i-kode").value = txt; isiOtomatis(); modalScannerBS.hide(); stopScanner(); }
+    function stopScanner() { if(html5QrcodeScanner) { html5QrcodeScanner.clear(); } modalScannerBS.hide(); }
+  </script>
+</body>
+</html>

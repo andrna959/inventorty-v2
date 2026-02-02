@@ -1,0 +1,224 @@
+<div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark" style="width: 250px; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1000; overflow-y: auto;">
+  
+  <a href="<?= scriptUrl ?>?page=dashboard" class="d-flex align-items-center mb-4 mb-md-0 me-md-auto text-white text-decoration-none px-2">
+    <i class="material-icons me-2 text-primary" style="font-size: 32px;">warehouse</i>
+    <div>
+      <div class="fs-5 fw-bold">WMS System</div>
+      <div style="font-size: 10px; opacity: 0.7; letter-spacing: 1px;">WAREHOUSE PRO</div>
+    </div>
+  </a>
+  
+  <hr class="mb-3" style="opacity: 0.2;">
+  
+  <? 
+    var inboundActive = (page == 'barang-masuk' || page == 'riwayat-masuk');
+    var outboundActive = (page == 'barang-keluar' || page == 'riwayat-keluar');
+    var productActive = (page == 'master-produk' || page == 'laporan-barang' || page == 'stock-log'); // laporan-barang = Batch Produk
+    var locationActive = (page == 'data-pendukung');
+  ?>
+
+  <ul class="nav nav-pills flex-column mb-auto" id="sidebarAccordion">
+    
+    <li class="nav-item mb-2">
+      <a href="<?= scriptUrl ?>?page=dashboard" class="nav-link d-flex align-items-center <? if(page == 'dashboard') { ?>active-parent<? } else { ?>text-white-50<? } ?>">
+        <i class="material-icons me-3">dashboard</i> 
+        <span>Dashboard</span>
+      </a>
+    </li>
+
+    <li class="mt-3 mb-2 px-3 text-uppercase fw-bold" style="font-size: 10px; color: #6c757d; letter-spacing: 1.5px;">Operasional</li>
+
+    <li class="nav-item mb-1">
+      <button class="nav-link w-100 d-flex align-items-center justify-content-between <? if(inboundActive) { ?>active-parent<? } else { ?>text-white-50 collapsed<? } ?>" 
+              data-bs-toggle="collapse" data-bs-target="#menu-inbound" 
+              aria-expanded="<?= inboundActive ?>" 
+              style="cursor: pointer; border: none; background: none;">
+        <div class="d-flex align-items-center">
+          <i class="material-icons me-3">move_to_inbox</i>
+          <span>Inbound</span>
+        </div>
+        <i class="material-icons arrow-icon">expand_more</i>
+      </button>
+      
+      <div class="collapse <? if(inboundActive) { ?>show<? } ?>" id="menu-inbound" data-bs-parent="#sidebarAccordion">
+        <ul class="nav flex-column ms-1 mt-1 border-start border-secondary border-opacity-25" style="margin-left: 1.2rem !important;">
+          <li class="nav-item">
+            <a href="<?= scriptUrl ?>?page=barang-masuk" class="nav-link submenu-link py-2 ps-4 <? if(page == 'barang-masuk') { ?>active<? } ?>">
+              Penerimaan Barang
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="<?= scriptUrl ?>?page=riwayat-masuk" class="nav-link submenu-link py-2 ps-4 <? if(page == 'riwayat-masuk') { ?>active<? } ?>">
+              Monitoring Inbound
+            </a>
+          </li>
+        </ul>
+      </div>
+    </li>
+
+    <li class="nav-item mb-1">
+      <button class="nav-link w-100 d-flex align-items-center justify-content-between <? if(outboundActive) { ?>active-parent<? } else { ?>text-white-50 collapsed<? } ?>" 
+              data-bs-toggle="collapse" data-bs-target="#menu-outbound" 
+              aria-expanded="<?= outboundActive ?>"
+              style="cursor: pointer; border: none; background: none;">
+        <div class="d-flex align-items-center">
+          <i class="material-icons me-3">outbox</i>
+          <span>Outbound</span>
+        </div>
+        <i class="material-icons arrow-icon">expand_more</i>
+      </button>
+      
+      <div class="collapse <? if(outboundActive) { ?>show<? } ?>" id="menu-outbound" data-bs-parent="#sidebarAccordion">
+        <ul class="nav flex-column ms-1 mt-1 border-start border-secondary border-opacity-25" style="margin-left: 1.2rem !important;">
+          <li class="nav-item">
+            <a href="<?= scriptUrl ?>?page=barang-keluar" class="nav-link submenu-link py-2 ps-4 <? if(page == 'barang-keluar') { ?>active<? } ?>">
+              Pengeluaran Barang
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link submenu-link py-2 ps-4">
+              Monitoring Outbound
+            </a>
+          </li>
+        </ul>
+      </div>
+    </li>
+
+    <li class="mt-4 mb-2 px-3 text-uppercase fw-bold" style="font-size: 10px; color: #6c757d; letter-spacing: 1.5px;">Master Data</li>
+
+    <li class="nav-item mb-1">
+      <button class="nav-link w-100 d-flex align-items-center justify-content-between <? if(productActive) { ?>active-parent<? } else { ?>text-white-50 collapsed<? } ?>" 
+              data-bs-toggle="collapse" data-bs-target="#menu-product" 
+              aria-expanded="<?= productActive ?>"
+              style="cursor: pointer; border: none; background: none;">
+        <div class="d-flex align-items-center">
+          <i class="material-icons me-3">inventory_2</i>
+          <span>Produk</span>
+        </div>
+        <i class="material-icons arrow-icon">expand_more</i>
+      </button>
+      
+      <div class="collapse <? if(productActive) { ?>show<? } ?>" id="menu-product" data-bs-parent="#sidebarAccordion">
+        <ul class="nav flex-column ms-1 mt-1 border-start border-secondary border-opacity-25" style="margin-left: 1.2rem !important;">
+          <li class="nav-item">
+            <a href="<?= scriptUrl ?>?page=master-produk" class="nav-link submenu-link py-2 ps-4 <? if(page == 'master-produk') { ?>active<? } ?>">
+              Master Produk
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="<?= scriptUrl ?>?page=laporan-barang" class="nav-link submenu-link py-2 ps-4 <? if(page == 'laporan-barang') { ?>active<? } ?>">
+              Batch Produk
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link submenu-link py-2 ps-4">
+              Riwayat Stok
+            </a>
+          </li>
+        </ul>
+      </div>
+    </li>
+
+    <li class="nav-item mb-1">
+      <button class="nav-link w-100 d-flex align-items-center justify-content-between <? if(locationActive) { ?>active-parent<? } else { ?>text-white-50 collapsed<? } ?>" 
+              data-bs-toggle="collapse" data-bs-target="#menu-location" 
+              aria-expanded="<?= locationActive ?>"
+              style="cursor: pointer; border: none; background: none;">
+        <div class="d-flex align-items-center">
+          <i class="material-icons me-3">place</i>
+          <span>Lokasi</span>
+        </div>
+        <i class="material-icons arrow-icon">expand_more</i>
+      </button>
+      
+      <div class="collapse <? if(locationActive) { ?>show<? } ?>" id="menu-location" data-bs-parent="#sidebarAccordion">
+        <ul class="nav flex-column ms-1 mt-1 border-start border-secondary border-opacity-25" style="margin-left: 1.2rem !important;">
+          <li class="nav-item">
+            <a href="<?= scriptUrl ?>?page=data-pendukung" class="nav-link submenu-link py-2 ps-4 <? if(page == 'data-pendukung') { ?>active<? } ?>">
+              Data Pendukung
+            </a>
+          </li>
+        </ul>
+      </div>
+    </li>
+
+  </ul>
+  
+  <div class="mt-auto pt-3 border-top border-secondary border-opacity-25">
+    <div class="d-flex align-items-center px-2">
+      <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width: 32px; height: 32px; font-size: 12px;">AD</div>
+      <div class="ms-2">
+        <div class="text-white small fw-bold">Admin Gudang</div>
+        <div class="text-white-50" style="font-size: 10px;">User Access</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<style>
+  /* 1. PARENT MENU STYLING */
+  /* Default State (Inactive) */
+  .nav-link {
+    transition: all 0.2s ease;
+    font-size: 14px;
+    letter-spacing: 0.3px;
+  }
+  
+  /* Hover State */
+  .nav-link:hover {
+    color: #fff !important;
+    background-color: rgba(255,255,255,0.05);
+  }
+
+  /* Active Parent State (Saat Expanded) */
+  .active-parent {
+    color: #fff !important;
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    font-weight: 600;
+    border-radius: 6px;
+  }
+
+  /* 2. SUBMENU STYLING */
+  /* Default Submenu */
+  .submenu-link {
+    color: #adb5bd; /* Warna netral */
+    font-size: 13px;
+    position: relative;
+    transition: all 0.2s;
+  }
+
+  /* Hover Submenu */
+  .submenu-link:hover {
+    color: #fff;
+    background: none !important;
+    padding-left: 28px !important; /* Efek geser dikit */
+  }
+
+  /* Active Submenu (Halaman yang sedang dibuka) */
+  .submenu-link.active {
+    color: #60a5fa !important; /* Warna Primary (Biru Muda) */
+    font-weight: 600;
+    background: linear-gradient(90deg, rgba(37, 99, 235, 0.1) 0%, rgba(0,0,0,0) 100%) !important;
+    border-left: 3px solid #3b82f6; /* Indikator Bar Kiri */
+  }
+
+  /* 3. ANIMASI PANAH (Arrow Rotation) */
+  .arrow-icon {
+    transition: transform 0.3s ease;
+    font-size: 18px;
+    opacity: 0.7;
+  }
+
+  /* Saat collapsed, panah menghadap samping (rotate -90deg) */
+  .collapsed .arrow-icon {
+    transform: rotate(-90deg);
+  }
+  
+  /* Saat expanded (tidak ada class collapsed), panah normal (bawah) */
+  /* Scrollbar cantik */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: #212529; }
+  ::-webkit-scrollbar-thumb { background: #495057; border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: #6c757d; }
+</style>

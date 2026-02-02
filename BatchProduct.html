@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.bootstrap5.min.css">
+
+  <style>
+    :root { --primary: #4f46e5; --bg-body: #f8fafc; }
+    body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; font-size: 13px; }
+    .content { margin-left: 250px; padding: 25px 40px; }
+    .kpi-card { background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 15px; }
+    .kpi-icon { width: 42px; height: 42px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .kpi-value { font-size: 22px; font-weight: 700; color: #1e293b; }
+    .card-table { background: #fff; border-radius: 10px; border: 1px solid #e2e8f0; overflow: hidden; }
+    .badge-loc { font-size: 11px; background: #eff6ff; color: #1d4ed8; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
+    .row-expired { background-color: #fff1f2 !important; } 
+  </style>
+</head>
+<body>
+
+  <?!= include('Sidebar', {scriptUrl: scriptUrl, page: page}); ?>
+
+  <div class="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h4 class="fw-bold m-0 text-dark">Batch Product (Live Stock)</h4>
+        <div class="text-muted small">Monitoring stok live gudang.</div>
+      </div>
+      <div>
+         <button class="btn btn-light border shadow-sm me-2 btn-sm fw-bold" onclick="loadStockData()"><i class="material-icons align-middle">refresh</i> REFRESH</button>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+       <div class="col-md-3"><div class="kpi-card"><div class="kpi-icon bg-info text-white"><i class="material-icons">inventory</i></div><div><div class="kpi-value" id="total-sku">0</div><div class="small text-muted">Total SKU</div></div></div></div>
+       <div class="col-md-3"><div class="kpi-card"><div class="kpi-icon bg-success text-white"><i class="material-icons">layers</i></div><div><div class="kpi-value" id="total-items">0</div><div class="small text-muted">Total Fisik</div></div></div></div>
+       <div class="col-md-3"><div class="kpi-card"><div class="kpi-icon bg-warning text-dark"><i class="material-icons">timer</i></div><div><div class="kpi-value" id="total-near-exp">0</div><div class="small text-muted">Near Expired</div></div></div></div>
+       <div class="col-md-3"><div class="kpi-card"><div class="kpi-icon bg-danger text-white"><i class="material-icons">warning</i></div><div><div class="kpi-value" id="total-expired">0</div><div class="small text-muted">Expired</div></div></div></div>
+    </div>
+
+    <div class="card-table">
+       <div class="table-responsive">
+         <table id="tableStock" class="table w-100 mb-0">
+           <thead>
+             <tr>
+               <th width="30%">Produk</th>
+               <th width="15%">Lokasi</th>
+               <th width="20%">Batch & Exp</th>
+               <th width="20%">Atribut</th>
+               <th width="15%" class="text-center">Qty</th>
+             </tr>
+           </thead>
+           <tbody></tbody>
+         </table>
+       </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+
+  <script>
+    let table;
+    document.addEventListener("DOMContentLoaded", loadStockData);
+
+    function loadStockData() {
+       if ($.fn.DataTable.isDataTable('#tableStock')) $('#tableStock').DataTable().clear().destroy();
+       document.querySelector('#tableStock tbody').innerHTML = '<tr><td colspan="5" class="text-center p-5 text-muted"><div class="spinner-border text-primary spinner-border-sm"></div> Memuat...</td></tr>';
+
+       google.script.run
+         .withSuccessHandler(renderTable)
+         .withFailureHandler(err => {
+             document.querySelector('#tableStock tbody').innerHTML = `<tr><td colspan="5" class="text-center text-danger p-5">Gagal: ${err.message}</td></tr>`;
+         })
+         .getBatchStockList('all');
+    }
+
+    function renderTable(data) {
+       const tbody = document.querySelector('#tableStock tbody');
+       tbody.innerHTML = "";
+
+       if (!data || !Array.isArray(data) || data.length === 0) {
+           tbody.innerHTML = '<tr><td colspan="5" class="text-center p-5 text-muted">Belum ada data stok.</td></tr>';
+           return;
+       }
+
+       let uniqueSKU = new Set();
+       let totalQty = 0, countNearExp = 0, countExpired = 0;
+
+       data.forEach(row => {
+          uniqueSKU.add(row.kode);
+          totalQty += row.qty;
+          
+          let expHtml = `<span class="badge bg-light text-dark border">NO EXP</span>`;
+          let rowClass = "";
+          if(row.exp && row.exp !== "-") {
+             let days = Math.ceil((new Date(row.exp) - new Date()) / (1000 * 60 * 60 * 24));
+             if(days < 0) { expHtml = `<span class="badge bg-danger">EXP</span>`; rowClass = "row-expired"; countExpired++; }
+             else if(days < 90) { expHtml = `<span class="badge bg-warning text-dark">NEAR</span>`; countNearExp++; }
+             else { expHtml = `<span class="badge bg-success">OK</span>`; }
+          }
+
+          let attr = [];
+          if(row.size && row.size!=="-") attr.push("SZ:"+row.size);
+          if(row.sticker && row.sticker!=="-") attr.push("ST:"+row.sticker);
+          if(row.cover && row.cover!=="-") attr.push("CV:"+row.cover);
+
+          let tr = document.createElement('tr');
+          if(rowClass) tr.className = rowClass;
+          tr.innerHTML = `
+            <td><div class="fw-bold text-primary">${row.nama}</div><div class="small text-muted">${row.kode} | ${row.brand}</div></td>
+            <td><span class="badge-loc">${row.lokasi}</span><div class="small text-muted">${row.typeLoc}</div></td>
+            <td><div class="fw-bold small">${row.batch}</div><div class="small">${row.exp} ${expHtml}</div></td>
+            <td>${attr.join(", ") || "-"}</td>
+            <td class="text-center fw-bold fs-6">${row.qty}</td>
+          `;
+          tbody.appendChild(tr);
+       });
+
+       document.getElementById('total-sku').innerText = uniqueSKU.size;
+       document.getElementById('total-items').innerText = totalQty;
+       document.getElementById('total-near-exp').innerText = countNearExp;
+       document.getElementById('total-expired').innerText = countExpired;
+
+       table = $('#tableStock').DataTable({ dom: 'tp', pageLength: 10 });
+    }
+  </script>
+</body>
+</html>
