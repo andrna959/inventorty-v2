@@ -7,103 +7,47 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
   
   <style>
-    /* --- THEME CONFIG --- */
-    :root { 
-      --primary: #2563eb; 
-      --bg-body: #f8f9fa; 
-      --card-bg: #ffffff;
-      --border-color: #e9ecef;
-      --text-label: #64748b;
-      --text-dark: #1e293b;
-      --error-bg: #fef2f2;
-      --error-border: #fca5a5;
-      --error-text: #b91c1c;
-    }
-
-    body { 
-      background-color: var(--bg-body); 
-      font-family: 'Inter', sans-serif; 
-      color: var(--text-dark);
-      font-size: 14px;
-    }
-
+    :root { --primary: #2563eb; --bg-body: #f8f9fa; --card-bg: #ffffff; --border-color: #e9ecef; --text-label: #64748b; --text-dark: #1e293b; --error-bg: #fef2f2; --error-border: #fca5a5; --error-text: #b91c1c; }
+    body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; color: var(--text-dark); font-size: 14px; }
     input[type="text"], textarea, .form-control { text-transform: uppercase; }
-
     .content { margin-left: 250px; padding: 25px 40px; transition: all 0.3s; }
-
-    .odoo-header {
-      background: white; border-bottom: 1px solid var(--border-color); padding: 15px 30px;
-      display: flex; justify-content: space-between; align-items: center;
-      position: sticky; top: 0; z-index: 99; 
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
-      margin: -25px -40px 30px -40px;
-    }
+    .odoo-header { background: white; border-bottom: 1px solid var(--border-color); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 99; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); margin: -25px -40px 30px -40px; }
     .status-badge { font-size: 13px; font-weight: 700; padding: 8px 16px; border-radius: 6px; }
     .status-draft { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
     .status-done { background: #dcfce7; color: #166534; border: 1px solid #86efac; display: none; }
-
-    .card-clean {
-      background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 30px;
-    }
-    .card-header-clean {
-      padding: 15px 25px; border-bottom: 1px solid var(--border-color);
-      font-weight: 700; color: var(--primary); text-transform: uppercase; font-size: 12px;
-      background: #fff; border-radius: 12px 12px 0 0; letter-spacing: 0.5px;
-      display: flex; justify-content: space-between; align-items: center;
-    }
+    .card-clean { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 30px; }
+    .card-header-clean { padding: 15px 25px; border-bottom: 1px solid var(--border-color); font-weight: 700; color: var(--primary); text-transform: uppercase; font-size: 12px; background: #fff; border-radius: 12px 12px 0 0; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center; }
     .card-body-clean { padding: 30px; }
-
     .form-label { font-size: 11px; font-weight: 600; color: var(--text-label); text-transform: uppercase; margin-bottom: 6px; }
     .form-control, .form-select { border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 15px; font-size: 14px; }
     .form-control:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
-    
-    /* MODAL STYLE */
     .modal-content { border: none; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
     .modal-header { padding: 20px 30px; border-bottom: 1px solid #f1f5f9; }
-    
     .modal-section-search { padding: 25px 30px 10px 30px; background: #fff; }
-    .product-display-card {
-      background: #eff6ff; border: 1px solid #dbeafe; border-radius: 10px; padding: 15px 20px;
-      margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;
-    }
-    
-    /* INFO MASTER SELALU MUNCUL (KONSISTEN) */
-    .master-note-box {
-      background: #fef2f2; 
-      border-left: 4px solid #dc2626; 
-      padding: 12px 15px; 
-      border-radius: 4px; 
-      font-size: 13px; 
-      color: #dc2626; 
-      font-weight: 700; 
-      margin-bottom: 20px;
-      /* Hapus display:none agar selalu tampil */
-    }
-
+    .product-display-card { background: #eff6ff; border: 1px solid #dbeafe; border-radius: 10px; padding: 15px 20px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
     .product-title { font-size: 16px; font-weight: 700; color: #1e3a8a; margin-bottom: 2px; }
     .product-brand { font-size: 12px; color: #60a5fa; font-weight: 600; text-transform: uppercase; }
+    .product-notes { font-size: 11px; color: #64748b; font-weight: 600; margin-top: 4px; font-style: italic; display: block; }
     .hidden-logic-input { position: absolute; opacity: 0; pointer-events: none; }
-
     .modal-section-main { padding: 0 30px 20px 30px; }
     .qty-input { font-size: 24px; font-weight: 800; color: var(--primary); text-align: center; letter-spacing: 1px; }
     .modal-section-details { background: #f8fafc; padding: 25px 30px; border-top: 1px solid #e2e8f0; border-radius: 0 0 16px 16px; }
-
     .table-custom thead th { background: #f8f9fa; color: #64748b; font-size: 11px; font-weight: 700; padding: 15px; border-bottom: 2px solid #e2e8f0; }
     .table-custom tbody td { padding: 15px; vertical-align: middle; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
-    
     .row-error { background-color: var(--error-bg) !important; border-left: 4px solid #ef4444; }
     .text-error-msg { color: #dc2626; font-size: 11px; font-weight: 700; display: block; margin-top: 4px; }
-    
     .btn-primary-custom { background: var(--primary); border: none; padding: 12px 30px; font-weight: 600; border-radius: 8px; color: white; transition: 0.2s; }
     .btn-primary-custom:hover { background: #1d4ed8; transform: translateY(-1px); }
     .btn-add-big { background: #fff; border: 1px dashed #cbd5e1; color: var(--primary); width: 100%; padding: 15px; border-radius: 8px; font-weight: 600; transition: 0.2s; }
     .btn-add-big:hover { background: #eff6ff; border-color: var(--primary); }
     .btn-excel { font-size: 12px; font-weight: 600; padding: 8px 16px; border-radius: 6px; }
-
+    
+    /* Layout Attributes Draft */
+    .attr-row-main { margin-bottom: 4px; }
+    .attr-row-kt { margin-top: 5px; font-size: 0.9em; }
+    .btn-action-group { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
   </style>
 </head>
 <body>
@@ -111,7 +55,6 @@
   <?!= include('Sidebar', {scriptUrl: scriptUrl, page: page}); ?>
 
   <div class="content">
-    
     <div class="odoo-header">
       <div class="d-flex align-items-center gap-3">
         <span id="status-draft" class="status-badge status-draft">DRAFT / BARU</span>
@@ -144,7 +87,7 @@
       <div class="card-header-clean">
         <span class="d-flex align-items-center"><i class="material-icons align-middle me-2">toc</i> Daftar Barang (Draft)</span>
         <div class="d-flex gap-2">
-           <button class="btn btn-outline-success btn-excel d-flex align-items-center" onclick="downloadTemplate()">
+           <button class="btn btn-outline-success btn-excel d-flex align-items-center" onclick="downloadCSVTemplate()">
              <i class="material-icons me-1" style="font-size:16px">download</i> Template CSV
            </button>
            <button class="btn btn-success btn-excel d-flex align-items-center" onclick="document.getElementById('fileExcel').click()">
@@ -165,7 +108,7 @@
                 <th width="15%">Detail Batch</th>
                 <th width="10%" class="text-center">Qty</th>
                 <th width="15%">Lokasi</th>
-                <th width="15%">Atribut</th>
+                <th width="20%">Atribut</th>
                 <th width="10%" class="text-end">Aksi</th>
               </tr>
             </thead>
@@ -200,7 +143,6 @@
             </div>
             <datalist id="listProduk"></datalist>
             <input type="hidden" id="i-kode-asli">
-
             <input type="text" id="i-nama" class="hidden-logic-input">
             <input type="text" id="i-brand" class="hidden-logic-input">
             <input type="text" id="i-notes-master" class="hidden-logic-input">
@@ -209,15 +151,9 @@
                <div>
                   <div class="product-title" id="disp-nama">- Pilih Barang Dulu -</div>
                   <div class="product-brand" id="disp-brand">BRAND: -</div>
+                  <div class="product-notes" id="disp-notes">NOTES: -</div>
                </div>
                <div class="text-end"><i class="material-icons text-primary opacity-25" style="font-size: 32px">verified</i></div>
-            </div>
-
-            <div id="masterNoteBox" class="master-note-box">
-               <div class="d-flex align-items-center mb-1">
-                  <i class="material-icons me-1" style="font-size:16px">warning</i> Info Produk (Master):
-               </div>
-               <div id="textMasterNote" class="fst-italic text-uppercase">-</div>
             </div>
         </div>
 
@@ -247,7 +183,6 @@
                <i class="material-icons text-muted me-2" style="font-size:18px">tune</i>
                <label class="form-label text-dark fw-bold m-0" style="letter-spacing: 0.5px;">DETAIL BATCH & SPESIFIKASI</label>
             </div>
-
             <div class="row g-3 mb-3">
                <div class="col-md-6"><label class="form-label">Nomor Batch</label><input type="text" class="form-control" id="i-batch" placeholder="BATCH NO"></div>
                <div class="col-md-6"><label class="form-label">Expired Date</label><input type="date" class="form-control" id="i-exp"></div>
@@ -257,9 +192,7 @@
                <div class="col-md-4"><label class="form-label">Size Cover</label><select class="form-select form-select-sm" id="i-cover"><option value="">- Pilih -</option></select></div>
                <div class="col-md-4"><label class="form-label">Size Produk</label><select class="form-select form-select-sm" id="i-size"><option value="">- Pilih -</option></select></div>
             </div>
-            
-            <div><label class="form-label">Catatan (Manual)</label><input type="text" class="form-control" id="i-ket" placeholder="Tulis keterangan tambahan jika perlu..."></div>
-            
+            <div><label class="form-label">Keterangan Manual (KT)</label><input type="text" class="form-control" id="i-ket" placeholder="Tulis keterangan tambahan..."></div>
             <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
                 <button type="button" class="btn btn-light text-muted fw-bold px-4" data-bs-dismiss="modal">BATAL</button>
                 <button type="button" class="btn-primary-custom px-5" id="btn-save-item" onclick="addToCart()">
@@ -282,9 +215,13 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+    // ============================================================
+    // A. SETUP & VARIABLE GLOBAL
+    // ============================================================
     let cart = [];
     let masterProduk = [];
     let globalLokasiData = [];
+    let globalSupportData = { size: [], typeSticker: [], sizeCover: [] };
     let modalInputBS, modalScannerBS;
     let html5QrcodeScanner = null;
     let editingIndex = -1;
@@ -297,324 +234,442 @@
       loadFromStorage();
       
       google.script.run.withSuccessHandler(cfg => { appConfig = cfg; }).getAppConfig();
-
+      
+      // Load Master Produk
       google.script.run.withSuccessHandler(d => {
         masterProduk = d;
         let list = document.getElementById("listProduk");
         list.innerHTML = "";
         d.forEach(r => { let opt = document.createElement("option"); opt.value = r[0]; opt.label = r[1]; list.appendChild(opt); });
       }).getMasterData();
-
+      
+      // Load Data Pendukung
       google.script.run.withSuccessHandler(d => {
-         globalLokasiData = d.lokasi;
+         globalLokasiData = d.lokasi; 
+         globalSupportData.size = d.size;
+         globalSupportData.typeSticker = d.typeSticker;
+         globalSupportData.sizeCover = d.sizeCover;
+
          isiDropdown('i-size', d.size);
          isiDropdown('i-sticker', d.typeSticker);
          isiDropdown('i-cover', d.sizeCover);
       }).getSupportingData();
     });
 
-    // --- IMPORT CSV LOGIC ---
-    function downloadTemplate() {
-       if(!appConfig) { alert("Config belum termuat, tunggu sebentar."); return; }
-       const headers = appConfig.CSV_TEMPLATE.HEADERS.join(",");
-       const example = appConfig.CSV_TEMPLATE.EXAMPLE.join(",");
-       const csvContent = "data:text/csv;charset=utf-8," + headers + "\n" + example;
-       const encodedUri = encodeURI(csvContent);
-       const link = document.createElement("a");
-       link.setAttribute("href", encodedUri);
-       link.setAttribute("download", "Template_Inbound.csv");
-       document.body.appendChild(link);
-       link.click();
+    // ============================================================
+    // B. LOGIKA UTAMA (NORMALISASI & VALIDASI)
+    // ============================================================
+
+    function capitalize(s) {
+      if (!s) return "";
+      return s.trim().charAt(0).toUpperCase() + s.trim().slice(1).toLowerCase();
+    }
+
+    function normalizeItem(item) {
+      item.kodeBarang = String(item.kodeBarang || "").trim().toUpperCase();
+      item.typeLokasi = capitalize(String(item.typeLokasi || ""));
+      item.lokasi     = String(item.lokasi || "").trim().toUpperCase();
+      item.typeSticker= String(item.typeSticker || "").trim().toUpperCase();
+      item.sizeCover  = capitalize(String(item.sizeCover || ""));
+      item.size       = String(item.size || "").trim().toUpperCase();
+      item.noBatch    = String(item.noBatch || "").trim();
+      item.expiredDate= String(item.expiredDate || "").trim();
+      if(!item.keterangan || item.keterangan === "") item.keterangan = "-";
+      return item;
+    }
+
+    function validateItemSupport(item) {
+      let errors = [];
+
+      // A. Master Produk
+      let prod = masterProduk.find(p => p[0] === item.kodeBarang);
+      if (!prod) {
+        errors.push(`Kode Barang '${item.kodeBarang}' tidak ada di Master Produk`);
+      } else {
+        item.namaProduk = prod[1];
+        item.brand = prod[2];
+        item.notesMaster = prod[3] || "-"; 
+      }
+
+      // B. Qty
+      if (isNaN(item.qtyMasuk) || item.qtyMasuk <= 0) {
+        errors.push(`Qty tidak valid`);
+      }
+
+      // C. Type Lokasi
+      if (!['Excel', 'Koli'].includes(item.typeLokasi)) {
+         errors.push(`Type Lokasi '${item.typeLokasi}' tidak valid (Wajib Excel/Koli)`);
+      }
+
+      // D. Lokasi
+      let locFound = globalLokasiData.some(L => {
+          let code = L.split(" - ")[0].trim();
+          return code === item.lokasi;
+      });
+      if (!locFound) errors.push(`Lokasi '${item.lokasi}' tidak terdaftar`);
+
+      // E. Type Sticker
+      if (item.typeSticker && item.typeSticker !== "-" && item.typeSticker !== "") {
+         if(!globalSupportData.typeSticker.map(x=>x.toUpperCase()).includes(item.typeSticker)) {
+            errors.push(`Sticker '${item.typeSticker}' tidak terdaftar`);
+         }
+      }
+
+      // F. Size Cover
+      if (item.sizeCover && item.sizeCover !== "-" && item.sizeCover !== "") {
+         let coverExists = globalSupportData.sizeCover.some(x => x.toLowerCase() === item.sizeCover.toLowerCase());
+         if(!coverExists) errors.push(`Cover '${item.sizeCover}' tidak terdaftar`);
+      }
+
+      // G. Size Produk
+      if (item.size && item.size !== "-" && item.size !== "") {
+         if(!globalSupportData.size.map(x=>x.toUpperCase()).includes(item.size)) {
+            errors.push(`Size '${item.size}' tidak terdaftar`);
+         }
+      }
+
+      return errors;
+    }
+
+    // 3. Format Atribut UI (REVISED STRUCTURE)
+    function formatAttributes(item) {
+      let s = item.size && item.size !== "" ? item.size : "-";
+      let t = item.typeSticker && item.typeSticker !== "" ? item.typeSticker : "-";
+      let c = item.sizeCover && item.sizeCover !== "" ? item.sizeCover : "-";
+      let k = item.keterangan && item.keterangan !== "-" ? item.keterangan : "";
+
+      // Baris 1: Atribut Utama
+      let html = `<div class="attr-row-main">
+                    <span class="badge bg-light text-dark border me-1">SZ: ${s}</span>
+                    <span class="badge bg-light text-dark border me-1">ST: ${t}</span>
+                    <span class="badge bg-light text-dark border">CV: ${c}</span>
+                  </div>`;
+      
+      // Baris 2: Keterangan Manual (Jika ada)
+      if(k) {
+         html += `<div class="attr-row-kt">
+                    <span class="badge bg-warning text-dark border">KT: ${k}</span>
+                  </div>`;
+      }
+      return html;
+    }
+
+
+    // ============================================================
+    // C. CSV HANDLER
+    // ============================================================
+
+    function downloadCSVTemplate() {
+      const headers = "KODE,QTY,TYPE,LOKASI,BATCH,EXP,STICKER,COVER,SIZE,KET";
+      const example = "SNB-0001,10,Excel,EX01,BATCH-123,2026-12-31,STICKER VIAL,Kecil,360 ML,Barang Cacat";
+      const csvContent = headers + "\n" + example;
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "Template_BarangMasuk.csv";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
     }
 
     function handleFileExcel(input) {
        const file = input.files[0];
        if(!file) return;
+       
+       if (masterProduk.length === 0 || globalLokasiData.length === 0) {
+          Swal.fire("Tunggu", "Data Master sedang dimuat...", "info");
+          input.value = ""; return;
+       }
+
        const reader = new FileReader();
+       reader.readAsText(file);
        reader.onload = function(e) {
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, {type: 'array'});
-          const firstSheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[firstSheetName];
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, {defval: ""}); 
-          processCSVData(jsonData);
-          input.value = ""; 
+          processCSVImport(e.target.result);
+          input.value = "";
        };
-       reader.readAsArrayBuffer(file);
     }
 
-    function formatExcelDate(raw) {
-       if (!raw || raw === "-" || raw === "") return "";
-       if (!isNaN(raw) && raw > 10000) {
-           let date = new Date(Math.round((raw - 25569) * 86400 * 1000));
-           return date.toISOString().split('T')[0]; 
-       }
-       let date = new Date(raw);
-       if (!isNaN(date.getTime())) {
-           const offset = date.getTimezoneOffset();
-           date = new Date(date.getTime() - (offset*60*1000));
-           return date.toISOString().split('T')[0];
-       }
-       return ""; 
-    }
+    function processCSVImport(csvText) {
+      const lines = csvText.split(/\r\n|\n/);
+      let tempBatch = [];
+      let errorSummary = [];
+      const TYPE_MAP = { "EX": "Excel", "EXL": "Excel", "EXCEL": "Excel", "KOL": "Koli", "KOLI": "Koli" };
 
-    function processCSVData(data) {
-       let successCount = 0;
-       let errorCount = 0;
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        const cols = line.split(","); 
+        if (cols.length < 10) continue;
 
-       data.forEach((row, index) => {
-          let errors = [];
-          let kode = (row['KODE'] || row['kode'] || "").toString().trim().toUpperCase();
-          let qty = parseInt(row['QTY'] || row['qty'] || 0);
-          let type = (row['TYPE'] || row['type'] || "").toString().trim(); 
-          let lokasi = (row['LOKASI'] || row['lokasi'] || "").toString().trim().toUpperCase();
-          let batch = (row['BATCH'] || row['batch'] || "").toString().trim().toUpperCase() || "-";
-          let rawExp = (row['EXP'] || row['exp'] || "");
-          let exp = formatExcelDate(rawExp); 
-          let sticker = (row['STICKER'] || row['sticker'] || "").toString().trim().toUpperCase() || "-";
-          let cover = (row['COVER'] || row['cover'] || "").toString().trim().toUpperCase() || "-";
-          let size = (row['SIZE'] || row['size'] || "").toString().trim().toUpperCase() || "-";
-          let ket = (row['KET'] || row['ket'] || "").toString().trim().toUpperCase();
+        let rawType = String(cols[2]).trim().toUpperCase();
+        let fixType = TYPE_MAP[rawType] || capitalize(rawType);
 
-          let foundProd = masterProduk.find(p => p[0] === kode);
-          let namaProd = foundProd ? foundProd[1] : "TIDAK DITEMUKAN";
-          let brandProd = foundProd ? foundProd[2] : "-";
-          let notesMaster = foundProd ? foundProd[3] : "";
+        let item = {
+          kodeBarang: cols[0],
+          qtyMasuk:   parseInt(cols[1]),
+          typeLokasi: fixType,
+          lokasi:     cols[3],
+          noBatch:    cols[4],
+          expiredDate:cols[5],
+          typeSticker:cols[6],
+          sizeCover:  cols[7],
+          size:       cols[8],
+          keterangan: cols[9] // CSV KET -> Manual Notes
+        };
 
-          if(!foundProd) errors.push("Kode Barang Tidak Terdaftar");
-          if(qty <= 0 || isNaN(qty)) errors.push("Qty Wajib > 0");
-          type = type.charAt(0).toUpperCase() + type.slice(1).toLowerCase(); 
-          if(type !== "Excel" && type !== "Koli") errors.push("Type Lokasi Salah");
-          let validLoc = globalLokasiData.find(x => x.startsWith(lokasi));
-          if(!validLoc) { errors.push("Kode Lokasi Tidak Ada"); } 
-          else if (!validLoc.includes(type)) { errors.push(`Lokasi ${lokasi} bukan tipe ${type}`); }
-
-          let isValidRow = (errors.length === 0);
-          if(isValidRow) successCount++; else errorCount++;
-
-          // Gabungkan Notes Master + Manual (CSV)
-          let finalNotes = notesMaster;
-          if (ket) { if (finalNotes) finalNotes += " | " + ket; else finalNotes = ket; }
-
-          let newItem = {
-             kodeBarang: kode, namaProduk: namaProd, brand: brandProd,
-             qtyMasuk: qty, typeLokasi: type, lokasi: lokasi,
-             noBatch: batch, expiredDate: exp,
-             typeSticker: sticker, sizeCover: cover, size: size, keterangan: finalNotes,
-             isValid: isValidRow, errorMsg: errors.join(", ")
-          };
-
-          let existingIndex = cart.findIndex(c => 
-             c.kodeBarang === newItem.kodeBarang && c.lokasi === newItem.lokasi && c.noBatch === newItem.noBatch && 
-             c.typeLokasi === newItem.typeLokasi && c.expiredDate === newItem.expiredDate &&
-             c.typeSticker === newItem.typeSticker && c.sizeCover === newItem.sizeCover && c.size === newItem.size
-          );
-
-          if (existingIndex !== -1) {
-             cart[existingIndex].qtyMasuk += newItem.qtyMasuk;
-             if(!isValidRow) {
-                 cart[existingIndex].isValid = false;
-                 cart[existingIndex].errorMsg += " | " + newItem.errorMsg;
-             }
-          } else {
-             cart.push(newItem);
-          }
-       });
-
-       saveToStorage();
-       renderCart();
-
-       if(errorCount > 0) {
-          Swal.fire({ icon: 'warning', title: 'Import Selesai dengan Revisi', html: `Berhasil: <b>${successCount}</b><br>Perlu Revisi: <b class="text-danger">${errorCount}</b> baris berwarna merah.` });
-       } else {
-          Swal.fire({ icon: 'success', title: 'Import Sempurna!', text: `Semua ${successCount} data valid.` });
-       }
-    }
-
-    // --- MAIN FUNCTIONS ---
-    function openInputModal() {
-       editingIndex = -1; resetItemForm(); 
-       document.getElementById('btn-save-item').innerHTML = '<i class="material-icons align-middle me-2">add_shopping_cart</i> MASUKKAN KE DAFTAR';
-       modalInputBS.show(); setTimeout(() => document.getElementById('i-kode').focus(), 500); 
-    }
-    
-    function isiOtomatis() {
-      const val = document.getElementById("i-kode").value.trim().toUpperCase(); 
-      const found = masterProduk.find(r => String(r[0]).toUpperCase() === val || String(r[1]).toUpperCase() === val);
-      
-      if (found) { 
-          // Data: [Kode, Nama, Brand, Notes]
-          document.getElementById("i-kode").value = found[0]; document.getElementById("i-kode-asli").value = found[0]; 
-          document.getElementById("i-nama").value = found[1]; document.getElementById("i-brand").value = found[2]; 
-          document.getElementById("disp-nama").innerText = found[1]; document.getElementById("disp-brand").innerText = "BRAND: " + found[2];
-          
-          let masterNote = found[3] || "";
-          document.getElementById("i-notes-master").value = masterNote;
-          
-          // REVISI LOGIKA TAMPILAN: JIKA KOSONG, ISI "-"
-          let displayText = (masterNote && masterNote.trim() !== "" && masterNote !== "-") ? masterNote : "-";
-          document.getElementById("textMasterNote").innerText = displayText;
-
-          document.getElementById("i-qty").focus(); 
+        item = normalizeItem(item);
+        let rowErrors = validateItemSupport(item);
+        
+        if (rowErrors.length > 0) {
+           errorSummary.push(`Baris ${i+1}: ${rowErrors.join(", ")}`);
+        } else {
+           tempBatch.push(item);
+        }
       }
+
+      if (errorSummary.length > 0) {
+        let msg = `<div style="text-align:left; max-height:200px; overflow-y:auto; font-size:12px;"><ul>`;
+        errorSummary.forEach(e => msg += `<li class="text-danger">${e}</li>`);
+        msg += `</ul></div>`;
+        
+        Swal.fire({ 
+            title: 'Import Dibatalkan', 
+            html: `Terdapat <b>${errorSummary.length}</b> kesalahan. Perbaiki file CSV Anda dan upload ulang.<hr>${msg}`, 
+            icon: 'error', 
+            width: '600px' 
+        });
+        return; 
+      }
+
+      let mergeCount = 0;
+      let newCount = 0;
+
+      tempBatch.forEach(newItem => {
+          let res = addOrMergeItemToDraft(newItem);
+          if (res === 'merged') mergeCount++; else newCount++;
+      });
+
+      saveToStorage();
+      renderCart();
+
+      Swal.fire({ 
+          icon: 'success', 
+          title: 'Import Sukses', 
+          html: `Berhasil memproses <b>${tempBatch.length}</b> baris.<br>Baru: ${newCount}, Merged: ${mergeCount}.`, 
+          timer: 2000, 
+          showConfirmButton: false 
+      });
+    }
+
+
+    // ============================================================
+    // D. FUNGSI DRAFT & UI
+    // ============================================================
+
+    function addOrMergeItemToDraft(newItem) {
+       // Merge key ignore notesMaster and Keterangan
+       const isMatch = (a, b) => {
+          return a.kodeBarang === b.kodeBarang &&
+                 a.noBatch === b.noBatch &&
+                 a.expiredDate === b.expiredDate &&
+                 a.typeLokasi === b.typeLokasi &&
+                 a.lokasi === b.lokasi &&
+                 a.typeSticker === b.typeSticker &&
+                 a.sizeCover === b.sizeCover &&
+                 a.size === b.size;
+       };
+
+       let existing = cart.find(x => isMatch(x, newItem));
+       
+       if (existing) {
+          existing.qtyMasuk += newItem.qtyMasuk; 
+          return 'merged';
+       } else {
+          cart.push(newItem); 
+          return 'new';
+       }
     }
 
     function addToCart() {
-       let notesMaster = document.getElementById('i-notes-master').value;
-       let notesManual = document.getElementById('i-ket').value.toUpperCase();
+       let notesManual = document.getElementById('i-ket').value;
        
-       let finalNotes = notesMaster;
-       if (notesManual) {
-           if (finalNotes) finalNotes += " | " + notesManual;
-           else finalNotes = notesManual;
-       }
-
        let item = {
-          kodeBarang: document.getElementById('i-kode-asli').value || document.getElementById('i-kode').value.toUpperCase(),
+          kodeBarang: document.getElementById('i-kode-asli').value || document.getElementById('i-kode').value,
           namaProduk: document.getElementById('i-nama').value,
           brand: document.getElementById('i-brand').value,
           qtyMasuk: parseInt(document.getElementById('i-qty').value),
           typeLokasi: document.getElementById('i-typeLoc').value,
           lokasi: document.getElementById('i-lokasi').value,
-          noBatch: document.getElementById('i-batch').value.toUpperCase(),
+          noBatch: document.getElementById('i-batch').value,
           expiredDate: document.getElementById('i-exp').value,
           typeSticker: document.getElementById('i-sticker').value,
           sizeCover: document.getElementById('i-cover').value,
           size: document.getElementById('i-size').value,
-          keterangan: finalNotes, 
-          isValid: true, errorMsg: "" 
+          keterangan: notesManual
        };
 
        if(!item.kodeBarang || !item.qtyMasuk || !item.typeLokasi || !item.lokasi) {
           Swal.fire({icon: 'warning', title: 'Data Belum Lengkap', text: 'Pastikan Kode, Qty, Type Lokasi, dan Lokasi Rak terisi!'}); return;
        }
 
+       item = normalizeItem(item);
+
+       let errs = validateItemSupport(item);
+       if(errs.length > 0) {
+          Swal.fire({
+            icon: 'error', title: 'Data Tidak Valid', 
+            html: `Data tidak terdaftar di Master:<br><ul class="text-start text-danger mb-0">${errs.map(e=>`<li>${e}</li>`).join('')}</ul>`
+          });
+          return;
+       }
+
        if(editingIndex >= 0) {
-          cart[editingIndex] = item;
+          cart[editingIndex] = item; 
           Swal.fire({icon: 'success', title: 'Diperbarui', toast: true, position: 'top-end', showConfirmButton: false, timer: 1000});
        } else {
-          let existingIndex = cart.findIndex(c => 
-             c.kodeBarang === item.kodeBarang && c.lokasi === item.lokasi && c.noBatch === newItem.noBatch && 
-             c.typeLokasi === newItem.typeLokasi && c.expiredDate === newItem.expiredDate &&
-             c.typeSticker === newItem.typeSticker && c.sizeCover === newItem.sizeCover && c.size === newItem.size
-          );
-          if (existingIndex !== -1) {
-             cart[existingIndex].qtyMasuk += item.qtyMasuk;
-             Swal.fire({icon: 'info', title: 'Digabungkan', text: `Qty menjadi ${cart[existingIndex].qtyMasuk}`, toast: true, position: 'top-end', showConfirmButton: false, timer: 1500});
-          } else {
-             cart.push(item);
-             Swal.fire({icon: 'success', title: 'Ditambahkan', toast: true, position: 'top-end', showConfirmButton: false, timer: 1000});
-          }
+          addOrMergeItemToDraft(item);
+          Swal.fire({icon: 'success', title: 'Ditambahkan', toast: true, position: 'top-end', showConfirmButton: false, timer: 1000});
        }
        saveToStorage(); renderCart(); modalInputBS.hide();
     }
 
     function editCart(index) {
-       editingIndex = index; let item = cart[index];
-       document.getElementById('i-kode').value = item.kodeBarang; document.getElementById('i-kode-asli').value = item.kodeBarang;
-       isiOtomatis(); 
-       document.getElementById('i-qty').value = item.qtyMasuk; document.getElementById('i-typeLoc').value = item.typeLokasi;
-       filterLokasiRak(); document.getElementById('i-lokasi').value = item.lokasi;
-       document.getElementById('i-batch').value = item.noBatch; document.getElementById('i-exp').value = item.expiredDate;
-       document.getElementById('i-sticker').value = item.typeSticker; document.getElementById('i-cover').value = item.sizeCover;
-       document.getElementById('i-size').value = item.size; 
+       editingIndex = index;
+       let item = cart[index];
+
+       // 1. Populate Basic Fields
+       document.getElementById('i-kode').value = item.kodeBarang;
+       document.getElementById('i-kode-asli').value = item.kodeBarang;
        
-       document.getElementById('i-ket').value = ""; 
+       // 2. Trigger isiOtomatis untuk mengisi Read-only fields (Nama, Brand, Notes Master)
+       isiOtomatis();
+
+       // 3. Overwrite dengan data dari Cart (Editable Fields)
+       document.getElementById('i-qty').value = item.qtyMasuk;
+       document.getElementById('i-typeLoc').value = item.typeLokasi;
+       filterLokasiRak();
+       document.getElementById('i-lokasi').value = item.lokasi;
+       document.getElementById('i-batch').value = item.noBatch;
+       document.getElementById('i-exp').value = item.expiredDate;
+       document.getElementById('i-sticker').value = item.typeSticker;
+       document.getElementById('i-cover').value = item.sizeCover;
+       document.getElementById('i-size').value = item.size;
        
+       // Keterangan Manual (KT)
+       document.getElementById('i-ket').value = (item.keterangan === "-" ? "" : item.keterangan);
+
+       // 4. Update Button Text
        document.getElementById('btn-save-item').innerHTML = '<i class="material-icons align-middle me-2">save</i> UPDATE BARANG';
        modalInputBS.show();
     }
 
     function renderCart() {
        let tbody = document.getElementById('cart-body'); tbody.innerHTML = "";
-       if(cart.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="7" class="p-5 text-center"><div class="text-muted mb-3" style="opacity: 0.5"><i class="material-icons" style="font-size: 48px">shopping_basket</i></div><div class="text-muted fw-bold">Belum ada barang di daftar.</div><button class="btn btn-outline-primary btn-sm mt-3" onclick="openInputModal()">+ Tambah Barang</button></td></tr>`;
-          document.getElementById('total-items').innerText = "0 Item"; return;
-       }
+       if(cart.length === 0) { tbody.innerHTML = `<tr><td colspan="7" class="p-5 text-center"><div class="text-muted mb-3" style="opacity: 0.5"><i class="material-icons" style="font-size: 48px">shopping_basket</i></div><div class="text-muted fw-bold">Belum ada barang di daftar.</div><button class="btn btn-outline-primary btn-sm mt-3" onclick="openInputModal()">+ Tambah Barang</button></td></tr>`; document.getElementById('total-items').innerText = "0 Item"; return; }
        
-       let invalidCount = 0;
        cart.forEach((item, index) => {
-          let rowClass = item.isValid ? "" : "row-error";
-          let errorText = item.isValid ? "" : `<span class="text-error-msg"><i class="material-icons align-middle" style="font-size:12px">error</i> ${item.errorMsg}</span>`;
-          if(!item.isValid) invalidCount++;
-
-          let attrDisplay = [];
-          if(item.size && item.size !== "-") attrDisplay.push(`<span class="badge bg-light text-dark border me-1">SZ: ${item.size}</span>`);
-          if(item.typeSticker && item.typeSticker !== "-") attrDisplay.push(`<span class="badge bg-light text-dark border me-1">ST: ${item.typeSticker}</span>`);
+          let attrDisplay = formatAttributes(item);
           
-          let notesDisplay = item.keterangan ? `<div class="small text-danger fst-italic mt-1"><i class="material-icons align-middle" style="font-size:10px">info</i> ${item.keterangan}</div>` : "";
+          // Notes Master Display (Gray, Read Only, Under SKU)
+          let notesMasterDisplay = item.notesMaster && item.notesMaster !== "-" 
+              ? `<div class="small text-muted fst-italic mt-1"><i class="material-icons align-middle" style="font-size:10px">info</i> Notes: ${item.notesMaster}</div>` 
+              : "";
 
           let tr = document.createElement('tr');
-          tr.className = rowClass;
+          // Perubahan: Column Aksi menggunakan align-middle dan Stacked Button
           tr.innerHTML = `
             <td class="text-center fw-bold text-muted">${index + 1}</td>
-            <td><div class="fw-bold text-dark">${item.namaProduk}</div><div class="small text-muted badge bg-light text-dark border">${item.kodeBarang}</div>${errorText}${notesDisplay}</td>
-            <td><div class="small">BATCH: ${item.noBatch || '-'}</div><div class="small text-muted">EXP: ${item.expiredDate || '-'}</div></td>
+            <td>
+                <div class="fw-bold text-dark">${item.namaProduk}</div>
+                <div class="small text-muted badge bg-light text-dark border">${item.kodeBarang}</div>
+                ${notesMasterDisplay}
+            </td>
+            <td>
+                <div class="small">BATCH: ${item.noBatch || '-'}</div>
+                <div class="small text-muted">EXP: ${item.expiredDate || '-'}</div>
+            </td>
             <td class="text-center"><span class="fs-6 fw-bold text-primary">${item.qtyMasuk}</span></td>
-            <td><span class="badge bg-info text-dark" style="font-size:10px">${item.typeLokasi}</span><div class="fw-bold small mt-1 text-dark">${item.lokasi}</div></td>
-            <td>${attrDisplay.join("")}</td>
-            <td class="text-end">
-               <button class="btn btn-sm btn-warning text-white me-1" onclick="editCart(${index})" title="Edit"><i class="material-icons" style="font-size:16px">edit</i></button>
-               <button class="btn btn-sm btn-light text-danger border" onclick="hapusCart(${index})" title="Hapus"><i class="material-icons" style="font-size:16px">delete</i></button>
+            <td>
+                <span class="badge bg-info text-dark" style="font-size:10px">${item.typeLokasi}</span>
+                <div class="fw-bold small mt-1 text-dark">${item.lokasi}</div>
+            </td>
+            <td>${attrDisplay}</td>
+            <td class="text-end align-middle">
+                <div class="btn-action-group">
+                   <button class="btn btn-sm btn-warning text-white" onclick="editCart(${index})" title="Edit"><i class="material-icons" style="font-size:16px">edit</i></button>
+                   <button class="btn btn-sm btn-light text-danger border" onclick="hapusCart(${index})" title="Hapus"><i class="material-icons" style="font-size:16px">delete</i></button>
+                </div>
             </td>`;
           tbody.appendChild(tr);
        });
-       let badgeText = `${cart.length} Item`;
-       if(invalidCount > 0) badgeText += ` <span class="badge bg-danger ms-2">${invalidCount} Error</span>`;
-       document.getElementById('total-items').innerHTML = badgeText;
+       document.getElementById('total-items').innerText = `${cart.length} Item`;
     }
 
+    // --- Helper Functions UI ---
     function hapusCart(index) { cart.splice(index, 1); saveToStorage(); renderCart(); }
-
     function validateDocument() {
-       let header = {
-          tanggalMasuk: document.getElementById('h-tanggal').value,
-          shipmentDate: document.getElementById('h-shipment').value.toUpperCase(),
-          poProduk: document.getElementById('h-poProduk').value.toUpperCase(),
-          poSticker: document.getElementById('h-poSticker').value.toUpperCase()
-       };
+       let header = { tanggalMasuk: document.getElementById('h-tanggal').value, shipmentDate: document.getElementById('h-shipment').value.toUpperCase(), poProduk: document.getElementById('h-poProduk').value.toUpperCase(), poSticker: document.getElementById('h-poSticker').value.toUpperCase() };
        if(!header.poSticker || !header.poProduk) { Swal.fire("Header Kurang", "PO PRODUK & PO STICKER WAJIB DIISI!", "error"); return; }
        if(cart.length === 0) { Swal.fire("Kosong", "Belum ada barang di daftar!", "warning"); return; }
        
-       Swal.fire({ title: 'Validasi Inbound?', text: `Simpan ${cart.length} item ke database?`, icon: 'question', showCancelButton: true, confirmButtonText: 'YA, VALIDASI', confirmButtonColor: '#2563eb' }).then((result) => {
-          if (result.isConfirmed) {
-             let btn = document.getElementById('btn-validate'); let ori = btn.innerHTML; btn.innerHTML = "LOADING..."; btn.disabled = true;
-             google.script.run.withSuccessHandler((res) => {
-                if(res.success) {
-                   Swal.fire("Sukses!", res.message, "success");
-                   document.getElementById('status-draft').style.display = 'none'; document.getElementById('status-done').style.display = 'inline-block'; document.getElementById('final-trx-id').innerText = res.trxId; btn.style.display = 'none';
-                   disableAllInputs(); cart = []; saveToStorage(); renderCart();
-                } else { Swal.fire("Gagal", res.message, "error"); btn.innerHTML = ori; btn.disabled = false; }
-             }).processInboundTransaction(header, cart);
-          }
+       Swal.fire({ title: 'Validasi Inbound?', text: `Simpan ${cart.length} item ke database?`, icon: 'question', showCancelButton: true, confirmButtonText: 'YA, VALIDASI', confirmButtonColor: '#2563eb' }).then((result) => { 
+         if (result.isConfirmed) { 
+           let btn = document.getElementById('btn-validate'); let ori = btn.innerHTML; btn.innerHTML = "LOADING..."; btn.disabled = true; 
+           google.script.run.withSuccessHandler((res) => { 
+              if(res.success) { 
+                 Swal.fire("Sukses!", res.message, "success"); 
+                 document.getElementById('status-draft').style.display = 'none'; document.getElementById('status-done').style.display = 'inline-block'; document.getElementById('final-trx-id').innerText = res.trxId; 
+                 btn.style.display = 'none'; disableAllInputs(); cart = []; saveToStorage(); renderCart(); 
+              } else { Swal.fire("Gagal", res.message, "error"); btn.innerHTML = ori; btn.disabled = false; } 
+           }).processInboundTransaction(header, cart); 
+         } 
        });
     }
 
-    function resetItemForm() {
-       document.getElementById('i-kode').value = ""; document.getElementById('i-kode-asli').value = "";
-       document.getElementById('i-nama').value = ""; document.getElementById('i-brand').value = ""; document.getElementById('i-notes-master').value = "";
-       document.getElementById('disp-nama').innerText = "- Pilih Barang Dulu -"; document.getElementById('disp-brand').innerText = "BRAND: -";
-       
-       // RESET KOTAK NOTES MASTER: KEMBALI DEFAULT "-"
-       document.getElementById('textMasterNote').innerText = "-"; 
-       
+    function openInputModal() { editingIndex = -1; resetItemForm(); document.getElementById('btn-save-item').innerHTML = '<i class="material-icons align-middle me-2">add_shopping_cart</i> MASUKKAN KE DAFTAR'; modalInputBS.show(); setTimeout(() => document.getElementById('i-kode').focus(), 500); }
+    function resetItemForm() { 
+       document.getElementById('i-kode').value = ""; document.getElementById('i-kode-asli').value = ""; document.getElementById('i-nama').value = ""; document.getElementById('i-brand').value = ""; document.getElementById('i-notes-master').value = ""; 
+       document.getElementById('disp-nama').innerText = "- Pilih Barang Dulu -"; document.getElementById('disp-brand').innerText = "BRAND: -"; document.getElementById('disp-notes').innerText = "NOTES: -";
        document.getElementById('i-qty').value = ""; document.getElementById('i-typeLoc').value = ""; 
-       document.getElementById('i-lokasi').innerHTML = "<option>Pilih Type Dulu</option>"; document.getElementById('i-lokasi').disabled = true;
-       document.getElementById('i-batch').value = ""; document.getElementById('i-exp').value = "";
-       document.getElementById('i-sticker').value = ""; document.getElementById('i-cover').value = "";
-       document.getElementById('i-size').value = ""; document.getElementById('i-ket').value = "";
+       document.getElementById('i-lokasi').innerHTML = "<option>Pilih Type Dulu</option>"; document.getElementById('i-lokasi').disabled = true; 
+       document.getElementById('i-batch').value = ""; document.getElementById('i-exp').value = ""; 
+       document.getElementById('i-sticker').value = ""; document.getElementById('i-cover').value = ""; document.getElementById('i-size').value = ""; document.getElementById('i-ket').value = ""; 
     }
     function resetAll() { if(cart.length > 0) if(!confirm("Reset formulir?")) return; localStorage.removeItem("wms_cart"); location.reload(); }
     function saveToStorage() { localStorage.setItem("wms_cart", JSON.stringify(cart)); }
     function loadFromStorage() { let s = localStorage.getItem("wms_cart"); if(s) { cart = JSON.parse(s); renderCart(); } }
     function disableAllInputs() { document.querySelectorAll('input, button, select').forEach(e => e.disabled = true); document.querySelector('.btn-close').disabled = false; }
-    function filterLokasiRak() {
-        const type = document.getElementById("i-typeLoc").value; const sel = document.getElementById("i-lokasi");
-        sel.innerHTML = '<option value="" disabled selected>Pilih...</option>'; sel.disabled = false;
-        let filtered = globalLokasiData.filter(x => x.includes(type));
-        filtered.forEach(x => { let opt = document.createElement('option'); let parts = x.split(' - '); opt.value = parts[0]; opt.text = parts[0]; sel.appendChild(opt); });
+    
+    function filterLokasiRak() { 
+       const type = document.getElementById("i-typeLoc").value; 
+       const sel = document.getElementById("i-lokasi"); 
+       sel.innerHTML = '<option value="" disabled selected>Pilih...</option>'; 
+       sel.disabled = false; 
+       let filtered = globalLokasiData.filter(x => x.includes(type)); 
+       filtered.forEach(x => { 
+          let code = x.split(' - ')[0].trim();
+          let opt = document.createElement('option'); 
+          opt.value = code; opt.text = code; 
+          sel.appendChild(opt); 
+       }); 
     }
+    
     function isiDropdown(id, arr) { let sel = document.getElementById(id); if(arr) arr.forEach(x => { let opt = document.createElement('option'); opt.value = x; opt.text = x; sel.appendChild(opt); }); }
+    
+    function isiOtomatis() {
+      const val = document.getElementById("i-kode").value.trim().toUpperCase(); 
+      const found = masterProduk.find(r => String(r[0]).toUpperCase() === val || String(r[1]).toUpperCase() === val);
+      if (found) { 
+          document.getElementById("i-kode").value = found[0]; document.getElementById("i-kode-asli").value = found[0]; 
+          document.getElementById("i-nama").value = found[1]; document.getElementById("i-brand").value = found[2]; 
+          document.getElementById("disp-nama").innerText = found[1]; document.getElementById("disp-brand").innerText = "BRAND: " + found[2];
+          
+          let n = found[3] || "-";
+          document.getElementById("disp-notes").innerText = "NOTES: " + n;
+          document.getElementById("i-notes-master").value = n;
+
+          document.getElementById("i-qty").focus(); 
+      }
+    }
     function bukaScanner() { modalScannerBS.show(); setTimeout(() => { if (!html5QrcodeScanner) html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 20, qrbox: 200 }, false); html5QrcodeScanner.render(onScanSuccess); }, 500); }
     function onScanSuccess(txt) { if (html5QrcodeScanner) html5QrcodeScanner.pause(); document.getElementById("i-kode").value = txt; isiOtomatis(); modalScannerBS.hide(); stopScanner(); }
     function stopScanner() { if(html5QrcodeScanner) { html5QrcodeScanner.clear(); } modalScannerBS.hide(); }
