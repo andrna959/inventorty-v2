@@ -5,19 +5,104 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
-  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.bootstrap5.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <style>
-    :root { --primary: #4f46e5; --bg-body: #f8fafc; }
-    body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; font-size: 13px; }
-    .content { margin-left: 250px; padding: 25px 40px; }
-    .kpi-card { background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 15px; }
-    .kpi-icon { width: 42px; height: 42px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-    .kpi-value { font-size: 22px; font-weight: 700; color: #1e293b; }
-    .card-table { background: #fff; border-radius: 10px; border: 1px solid #e2e8f0; overflow: hidden; }
-    .badge-loc { font-size: 11px; background: #eff6ff; color: #1d4ed8; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
-    .row-expired { background-color: #fff1f2 !important; } 
+    /* --- 1. CORE VARIABLES & RESET --- */
+    :root {
+      --primary-purple: #5e50ee; /* Warna Ungu Tombol Search/Export */
+      --primary-purple-hover: #4b3ecf;
+      --soft-blue: #e0e7ff;
+      --text-dark: #1f2937;
+      --text-gray: #6b7280;
+      --bg-body: #f9fafb;
+      --border-color: #e5e7eb;
+    }
+    
+    body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-dark); }
+    .content { margin-left: 250px; padding: 25px 40px; transition: all 0.3s; }
+    
+    /* --- 2. HEADER & TITLE --- */
+    .page-header { margin-bottom: 20px; }
+    .page-title { font-size: 20px; font-weight: 700; color: #111827; margin: 0; }
+    
+    /* --- 3. FILTER SECTION (RED BOX REFERENCE) --- */
+    .filter-card {
+      background: white;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+    
+    .filter-header {
+      display: flex; align-items: center; gap: 8px;
+      font-weight: 600; color: var(--primary-purple); margin-bottom: 15px;
+      cursor: pointer;
+    }
+    
+    .form-label-custom {
+      font-size: 11px; font-weight: 600; color: var(--text-gray); margin-bottom: 4px; display: block;
+    }
+    
+    .form-control-custom, .form-select-custom {
+      border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; padding: 8px 12px; width: 100%; transition: 0.2s;
+    }
+    .form-control-custom:focus { border-color: var(--primary-purple); outline: none; box-shadow: 0 0 0 2px rgba(94, 80, 238, 0.1); }
+
+    /* Switch Toggle */
+    .form-check-input:checked { background-color: var(--primary-purple); border-color: var(--primary-purple); }
+    
+    /* Buttons */
+    .btn-custom { font-weight: 600; font-size: 12px; padding: 8px 16px; border-radius: 6px; border: none; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    .btn-purple { background-color: var(--primary-purple); color: white; }
+    .btn-purple:hover { background-color: var(--primary-purple-hover); color: white; }
+    
+    .btn-white { background-color: white; border: 1px solid #d1d5db; color: var(--text-gray); }
+    .btn-white:hover { background-color: #f3f4f6; color: var(--text-dark); }
+    
+    .btn-blue-light { background-color: #38bdf8; color: white; } /* Import Button */
+    .btn-blue-light:hover { background-color: #0ea5e9; color: white; }
+
+    /* Text Links */
+    .text-action-link { color: #818cf8; font-weight: 600; text-decoration: none; font-size: 12px; margin-left: 15px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+    .text-action-link:hover { color: var(--primary-purple); text-decoration: underline; }
+
+    /* --- 4. ACTION BAR (IMPORT/EXPORT) --- */
+    .action-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    
+    /* --- 5. TABLE STYLES (MODERN CLEAN) --- */
+    .table-container { background: white; border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden; }
+    .table-custom { width: 100%; border-collapse: collapse; }
+    
+    .table-custom thead { background-color: #f9fafb; border-bottom: 1px solid var(--border-color); }
+    .table-custom th {
+      text-align: left; font-size: 11px; font-weight: 700; color: var(--text-gray); 
+      text-transform: uppercase; padding: 12px 16px; letter-spacing: 0.5px;
+    }
+    
+    .table-custom td {
+      padding: 12px 16px; border-bottom: 1px solid #f3f4f6; font-size: 13px; color: var(--text-dark); vertical-align: middle;
+    }
+    .table-custom tr:last-child td { border-bottom: none; }
+    .table-custom tr:hover { background-color: #f8fafc; }
+
+    /* Reference Column (Icon + SKU) */
+    .ref-col { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--primary-purple); }
+    .ref-icon { color: #9ca3af; font-size: 16px; cursor: pointer; }
+    .ref-icon:hover { color: var(--primary-purple); }
+
+    /* Status Badges */
+    .badge-status { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .badge-ok { background-color: #dcfce7; color: #166534; } /* Sellable */
+    .badge-near { background-color: #fef9c3; color: #854d0e; } /* Interim */
+    .badge-exp { background-color: #fee2e2; color: #991b1b; } /* Expired */
+
+    /* Qty Column */
+    .qty-col { display: flex; align-items: center; justify-content: flex-end; gap: 6px; font-weight: 700; }
+    .eye-icon { font-size: 16px; color: #a5b4fc; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -25,110 +110,258 @@
   <?!= include('Sidebar', {scriptUrl: scriptUrl, page: page}); ?>
 
   <div class="content">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
-        <h4 class="fw-bold m-0 text-dark">Batch Product (Live Stock)</h4>
-        <div class="text-muted small">Monitoring stok live gudang.</div>
+    
+    <div class="page-header">
+      <h1 class="page-title">Batch Product</h1>
+    </div>
+
+    <div class="filter-card">
+      <div class="filter-header" onclick="toggleFilter()">
+        <i class="material-icons">search</i> Filter
       </div>
-      <div>
-         <button class="btn btn-light border shadow-sm me-2 btn-sm fw-bold" onclick="loadStockData()"><i class="material-icons align-middle">refresh</i> REFRESH</button>
+      
+      <div id="filterContent">
+        <div class="row g-3 mb-3">
+          <div class="col-md-3">
+            <span class="form-label-custom">SKU / REFERENCE</span>
+            <input type="text" class="form-control-custom" id="f-sku" placeholder="Search SKU...">
+          </div>
+          <div class="col-md-3">
+            <span class="form-label-custom">NAME</span>
+            <input type="text" class="form-control-custom" id="f-name" placeholder="Search Product Name...">
+          </div>
+          <div class="col-md-3">
+            <span class="form-label-custom">BRAND</span>
+            <input type="text" class="form-control-custom" id="f-brand" placeholder="Search Brand...">
+          </div>
+          <div class="col-md-3">
+            <span class="form-label-custom">LOCATION</span>
+            <input type="text" class="form-control-custom" id="f-loc" placeholder="Search Location...">
+          </div>
+        </div>
+
+        <div class="row g-3 align-items-end">
+          <div class="col-md-3">
+            <span class="form-label-custom">TYPE / ATTRIBUTE</span>
+            <input type="text" class="form-control-custom" id="f-type" placeholder="Ex: Size, Sticker...">
+          </div>
+          <div class="col-md-3">
+             <span class="form-label-custom">EXPIRED DATE (FROM)</span>
+             <input type="date" class="form-control-custom" id="f-exp-from">
+          </div>
+          <div class="col-md-3">
+             <span class="form-label-custom">EXPIRED DATE (TO)</span>
+             <input type="date" class="form-control-custom" id="f-exp-to">
+          </div>
+          <div class="col-md-3 text-end">
+             <div class="d-flex justify-content-end gap-2">
+               <button class="btn-custom btn-purple" onclick="applyCustomFilter()">SEARCH</button>
+               <button class="btn-custom btn-white" onclick="resetFilter()">RESET</button>
+             </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="mt-3 d-flex align-items-center">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="alwaysOpen" checked>
+          <label class="form-check-label small text-muted" for="alwaysOpen">Always open</label>
+        </div>
       </div>
     </div>
 
-    <div class="row g-3 mb-4">
-       <div class="col-md-3"><div class="kpi-card"><div class="kpi-icon bg-info text-white"><i class="material-icons">inventory</i></div><div><div class="kpi-value" id="total-sku">0</div><div class="small text-muted">Total SKU</div></div></div></div>
-       <div class="col-md-3"><div class="kpi-card"><div class="kpi-icon bg-success text-white"><i class="material-icons">layers</i></div><div><div class="kpi-value" id="total-items">0</div><div class="small text-muted">Total Fisik</div></div></div></div>
-       <div class="col-md-3"><div class="kpi-card"><div class="kpi-icon bg-warning text-dark"><i class="material-icons">timer</i></div><div><div class="kpi-value" id="total-near-exp">0</div><div class="small text-muted">Near Expired</div></div></div></div>
-       <div class="col-md-3"><div class="kpi-card"><div class="kpi-icon bg-danger text-white"><i class="material-icons">warning</i></div><div><div class="kpi-value" id="total-expired">0</div><div class="small text-muted">Expired</div></div></div></div>
+    <div class="action-bar">
+      <div class="d-flex align-items-center">
+        <button class="btn-custom btn-blue-light shadow-sm" onclick="showImportModal()">
+          <i class="material-icons" style="font-size:16px">cloud_upload</i> IMPORT FROM EXCEL
+        </button>
+        <span class="text-action-link" onclick="downloadTemplate()"><i class="material-icons" style="font-size:16px">download</i> FILE TEMPLATE</span>
+        <span class="text-action-link" onclick="showAddModal()"><i class="material-icons" style="font-size:16px">add</i> ADD</span>
+      </div>
+      
+      <div class="d-flex gap-2">
+        <button class="btn-custom btn-purple shadow-sm" onclick="exportData('branch')">EXPORT ALL BRANCH</button>
+        <button class="btn-custom btn-purple shadow-sm" onclick="exportData('csv')">EXPORT CSV</button>
+      </div>
     </div>
 
-    <div class="card-table">
-       <div class="table-responsive">
-         <table id="tableStock" class="table w-100 mb-0">
-           <thead>
-             <tr>
-               <th width="30%">Produk</th>
-               <th width="15%">Lokasi</th>
-               <th width="20%">Batch & Exp</th>
-               <th width="20%">Atribut</th>
-               <th width="15%" class="text-center">Qty</th>
-             </tr>
-           </thead>
-           <tbody></tbody>
-         </table>
-       </div>
+    <div class="table-container">
+      <div class="table-responsive">
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th width="15%">Reference</th>
+              <th width="20%">Name</th>
+              <th width="10%">Brand</th>
+              <th width="10%">Expired Date</th>
+              <th width="10%">Box / Location</th>
+              <th width="15%">Type / Attr</th>
+              <th width="5%">Status</th>
+              <th width="10%">Batch No</th>
+              <th width="5%" class="text-end">Qty</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr><td colspan="9" class="text-center p-5 text-muted">Initializing data...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
+
   </div>
 
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-  <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+  
   <script>
-    let table;
-    document.addEventListener("DOMContentLoaded", loadStockData);
+    let globalStockData = [];
 
+    document.addEventListener("DOMContentLoaded", function() {
+       loadStockData();
+    });
+
+    // --- 1. DATA LOADING (LOGIC TETAP SAMA) ---
     function loadStockData() {
-       if ($.fn.DataTable.isDataTable('#tableStock')) $('#tableStock').DataTable().clear().destroy();
-       document.querySelector('#tableStock tbody').innerHTML = '<tr><td colspan="5" class="text-center p-5 text-muted"><div class="spinner-border text-primary spinner-border-sm"></div> Memuat...</td></tr>';
+       document.getElementById('tableBody').innerHTML = '<tr><td colspan="9" class="text-center p-5"><div class="spinner-border text-primary spinner-border-sm"></div> Loading Live Stock...</td></tr>';
 
        google.script.run
-         .withSuccessHandler(renderTable)
-         .withFailureHandler(err => {
-             document.querySelector('#tableStock tbody').innerHTML = `<tr><td colspan="5" class="text-center text-danger p-5">Gagal: ${err.message}</td></tr>`;
+         .withSuccessHandler(data => {
+             globalStockData = data; // Simpan di memori untuk client-side filtering
+             renderTable(data);
          })
-         .getBatchStockList('all');
+         .withFailureHandler(err => {
+             document.getElementById('tableBody').innerHTML = `<tr><td colspan="9" class="text-center text-danger p-5">Failed to load: ${err.message}</td></tr>`;
+         })
+         .getBatchStockList('all'); // Panggil fungsi backend existing
     }
 
+    // --- 2. RENDERING TABEL (SESUAI DESAIN MERAH) ---
     function renderTable(data) {
-       const tbody = document.querySelector('#tableStock tbody');
+       const tbody = document.getElementById('tableBody');
        tbody.innerHTML = "";
 
-       if (!data || !Array.isArray(data) || data.length === 0) {
-           tbody.innerHTML = '<tr><td colspan="5" class="text-center p-5 text-muted">Belum ada data stok.</td></tr>';
+       if (!data || data.length === 0) {
+           tbody.innerHTML = '<tr><td colspan="9" class="text-center p-5 text-muted">No data found matching your criteria.</td></tr>';
            return;
        }
 
-       let uniqueSKU = new Set();
-       let totalQty = 0, countNearExp = 0, countExpired = 0;
-
        data.forEach(row => {
-          uniqueSKU.add(row.kode);
-          totalQty += row.qty;
-          
-          let expHtml = `<span class="badge bg-light text-dark border">NO EXP</span>`;
+          // Logic Status (Sesuai Logic Existing: Expired calculation)
+          let statusBadge = `<span class="badge-status badge-ok">Sellable</span>`; // Default OK
           let rowClass = "";
+          
           if(row.exp && row.exp !== "-") {
              let days = Math.ceil((new Date(row.exp) - new Date()) / (1000 * 60 * 60 * 24));
-             if(days < 0) { expHtml = `<span class="badge bg-danger">EXP</span>`; rowClass = "row-expired"; countExpired++; }
-             else if(days < 90) { expHtml = `<span class="badge bg-warning text-dark">NEAR</span>`; countNearExp++; }
-             else { expHtml = `<span class="badge bg-success">OK</span>`; }
+             if(days < 0) { 
+                 statusBadge = `<span class="badge-status badge-exp">Expired</span>`; 
+             } else if(days < 90) { 
+                 statusBadge = `<span class="badge-status badge-near">Interim</span>`; 
+             }
+          } else {
+             // Jika tidak ada expired date, anggap OK/Sellable (Logic existing)
+             statusBadge = `<span class="badge-status badge-ok">Sellable</span>`;
           }
 
+          // Atribut Join
           let attr = [];
-          if(row.size && row.size!=="-") attr.push("SZ:"+row.size);
-          if(row.sticker && row.sticker!=="-") attr.push("ST:"+row.sticker);
-          if(row.cover && row.cover!=="-") attr.push("CV:"+row.cover);
+          if(row.size && row.size!=="-") attr.push(row.size);
+          if(row.sticker && row.sticker!=="-") attr.push(row.sticker);
+          if(row.cover && row.cover!=="-") attr.push(row.cover);
+          let attrString = attr.length > 0 ? attr.join(", ") : "-";
 
           let tr = document.createElement('tr');
-          if(rowClass) tr.className = rowClass;
           tr.innerHTML = `
-            <td><div class="fw-bold text-primary">${row.nama}</div><div class="small text-muted">${row.kode} | ${row.brand}</div></td>
-            <td><span class="badge-loc">${row.lokasi}</span><div class="small text-muted">${row.typeLoc}</div></td>
-            <td><div class="fw-bold small">${row.batch}</div><div class="small">${row.exp} ${expHtml}</div></td>
-            <td>${attr.join(", ") || "-"}</td>
-            <td class="text-center fw-bold fs-6">${row.qty}</td>
+            <td>
+              <div class="ref-col">
+                <i class="material-icons ref-icon" title="Print">print</i>
+                <i class="material-icons ref-icon" title="View File">description</i>
+                <span class="text-primary">${row.kode}</span>
+              </div>
+            </td>
+            <td class="fw-bold">${row.nama}</td>
+            <td>${row.brand || '-'}</td>
+            <td>${row.exp || '-'}</td>
+            <td>
+                <div class="fw-bold text-dark">${row.lokasi}</div>
+                <div class="small text-muted" style="font-size:10px">${row.typeLoc}</div>
+            </td>
+            <td class="text-muted small">${attrString}</td>
+            <td>${statusBadge}</td>
+            <td class="font-monospace small text-dark fw-bold">${row.batch || '-'}</td>
+            <td>
+               <div class="qty-col">
+                 <i class="material-icons eye-icon">visibility</i>
+                 <span>${row.qty}</span>
+               </div>
+            </td>
           `;
           tbody.appendChild(tr);
        });
-
-       document.getElementById('total-sku').innerText = uniqueSKU.size;
-       document.getElementById('total-items').innerText = totalQty;
-       document.getElementById('total-near-exp').innerText = countNearExp;
-       document.getElementById('total-expired').innerText = countExpired;
-
-       table = $('#tableStock').DataTable({ dom: 'tp', pageLength: 10 });
     }
+
+    // --- 3. CLIENT SIDE FILTERING (PENGGANTI DATATABLES SEARCH) ---
+    function applyCustomFilter() {
+        const sku = document.getElementById('f-sku').value.toLowerCase();
+        const name = document.getElementById('f-name').value.toLowerCase();
+        const brand = document.getElementById('f-brand').value.toLowerCase();
+        const loc = document.getElementById('f-loc').value.toLowerCase();
+        const type = document.getElementById('f-type').value.toLowerCase();
+        
+        // Date Range Logic
+        const dateFrom = document.getElementById('f-exp-from').value;
+        const dateTo = document.getElementById('f-exp-to').value;
+
+        const filtered = globalStockData.filter(item => {
+            let match = true;
+            
+            if(sku && !String(item.kode).toLowerCase().includes(sku)) match = false;
+            if(match && name && !String(item.nama).toLowerCase().includes(name)) match = false;
+            if(match && brand && !String(item.brand).toLowerCase().includes(brand)) match = false;
+            if(match && loc && !String(item.lokasi).toLowerCase().includes(loc)) match = false;
+            
+            // Check Attributes (Type)
+            if(match && type) {
+               const combinedAttr = (item.size + item.sticker + item.cover).toLowerCase();
+               if(!combinedAttr.includes(type)) match = false;
+            }
+
+            // Check Date Range (If set)
+            if(match && (dateFrom || dateTo)) {
+                if(item.exp === "-" || !item.exp) {
+                    match = false; // Exclude non-exp items if filtering by date
+                } else {
+                    const itemDate = new Date(item.exp);
+                    if(dateFrom && itemDate < new Date(dateFrom)) match = false;
+                    if(dateTo && itemDate > new Date(dateTo)) match = false;
+                }
+            }
+
+            return match;
+        });
+
+        renderTable(filtered);
+    }
+
+    function resetFilter() {
+        document.getElementById('f-sku').value = "";
+        document.getElementById('f-name').value = "";
+        document.getElementById('f-brand').value = "";
+        document.getElementById('f-loc').value = "";
+        document.getElementById('f-type').value = "";
+        document.getElementById('f-exp-from').value = "";
+        document.getElementById('f-exp-to').value = "";
+        renderTable(globalStockData);
+    }
+
+    function toggleFilter() {
+        // Optional: Implement collapse logic if needed, but "Always open" toggle implies visibility
+    }
+
+    // --- 4. DUMMY ACTIONS (UI ONLY) ---
+    function showImportModal() { Swal.fire("Import", "Fitur Import Excel", "info"); }
+    function downloadTemplate() { Swal.fire("Template", "Download Template", "success"); }
+    function showAddModal() { Swal.fire("Add", "Tambah Manual", "info"); }
+    function exportData(type) { Swal.fire("Export", "Export type: " + type, "success"); }
+
   </script>
 </body>
 </html>
