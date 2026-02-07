@@ -39,11 +39,11 @@ function doGet(e) {
   var template;
   
   if (page == 'dashboard') template = HtmlService.createTemplateFromFile('Dashboard');
-  else if (page == 'barang-masuk') template = HtmlService.createTemplateFromFile('BarangMasuk');
-  else if (page == 'riwayat-masuk') template = HtmlService.createTemplateFromFile('RiwayatMasuk');
-  else if (page == 'master-produk') template = HtmlService.createTemplateFromFile('MasterProduk');
-  else if (page == 'laporan-barang') template = HtmlService.createTemplateFromFile('BatchProduct');
-  else if (page == 'data-pendukung') template = HtmlService.createTemplateFromFile('DataPendukung');
+  else if (page == 'BarangMasuk') template = HtmlService.createTemplateFromFile('BarangMasuk');
+  else if (page == 'RiwayatMasuk') template = HtmlService.createTemplateFromFile('RiwayatMasuk');
+  else if (page == 'MasterProduk') template = HtmlService.createTemplateFromFile('MasterProduk');
+  else if (page == 'LaporanBarang') template = HtmlService.createTemplateFromFile('BatchProduct');
+  else if (page == 'DataPendukung') template = HtmlService.createTemplateFromFile('DataPendukung');
   else template = HtmlService.createTemplateFromFile('Dashboard');
   
   template.page = page; 
