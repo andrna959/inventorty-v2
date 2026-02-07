@@ -29,61 +29,63 @@
     .wms-table td { padding: 14px 16px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
     .wms-table tr:last-child td { border-bottom: none; }
     
-    /* --- NEW ACTION COLUMN STYLE (Sesuai Request) --- */
+    /* --- NEW ACTION COLUMN STYLE --- */
     .action-col {
       display: flex; 
       align-items: center; 
       justify-content: flex-end; 
-      gap: 12px; /* Jarak antar elemen */
+      gap: 12px; 
     }
     
-    /* Ikon Polos (Print/List) */
     .btn-action-icon {
-      color: #94a3b8; /* Abu-abu soft */
+      color: #94a3b8; 
       cursor: pointer;
       transition: all 0.2s;
       font-size: 20px;
       display: flex; align-items: center;
     }
-    .btn-action-icon:hover {
-      color: #334155; /* Abu-abu gelap saat hover */
-      transform: scale(1.1);
-    }
+    .btn-action-icon:hover { color: #334155; transform: scale(1.1); }
     
-    /* Ikon Delete Khusus */
     .btn-action-delete {
-      color: #ef4444; /* Merah soft */
+      color: #ef4444; 
       cursor: pointer;
       transition: all 0.2s;
       font-size: 20px;
       display: flex; align-items: center;
     }
-    .btn-action-delete:hover {
-      color: #b91c1c; /* Merah gelap */
-      transform: scale(1.1);
-    }
+    .btn-action-delete:hover { color: #b91c1c; transform: scale(1.1); }
 
-    /* Tombol Teks SHOW */
     .btn-action-show {
       font-size: 12px;
       font-weight: 700;
-      color: #2563eb; /* Biru Odoo */
+      color: #2563eb; 
       cursor: pointer;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       padding: 4px 8px;
       border-radius: 4px;
       transition: 0.2s;
-      margin-left: 4px; /* Jarak ekstra dari ikon */
+      margin-left: 4px; 
     }
-    .btn-action-show:hover {
-      background-color: #eff6ff;
-      color: #1d4ed8;
-    }
+    .btn-action-show:hover { background-color: #eff6ff; color: #1d4ed8; }
 
     /* Modal Detail */
     .detail-table th { background: #f1f5f9; font-size: 11px; }
     .detail-table td { font-size: 12px; }
+
+    /* Styling Khusus Notes */
+    .master-notes-text {
+      display: block;
+      margin-top: 4px;
+      font-size: 11px;
+      color: #64748b; /* Warna Abu-abu */
+      font-style: italic;
+    }
+    .master-notes-text i {
+        font-size: 10px; 
+        vertical-align: middle; 
+        margin-right: 2px;
+    }
   </style>
 </head>
 <body>
@@ -152,13 +154,12 @@
             <table class="table mb-0 table-striped detail-table">
               <thead>
                 <tr>
-                  <th>SKU / Nama</th>
-                  <th>Brand</th>
-                  <th>Batch / Exp</th>
-                  <th>Lokasi</th>
-                  <th>Atribut</th>
-                  <th>Notes</th>
-                  <th class="text-end">Qty</th>
+                  <th width="25%">SKU / Nama</th>
+                  <th width="10%">Brand</th>
+                  <th width="15%">Batch / Exp</th>
+                  <th width="10%">Lokasi</th>
+                  <th width="20%">Atribut</th>
+                  <th width="15%">Notes (Keterangan)</th> <th width="5%" class="text-end">Qty</th>
                 </tr>
               </thead>
               <tbody id="detailItemsBody"></tbody>
@@ -173,10 +174,17 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     let globalData = [];
+    let masterProdukCache = []; // Variabel untuk menyimpan Master Data
     let detailModalBS;
 
     document.addEventListener("DOMContentLoaded", function() {
       detailModalBS = new bootstrap.Modal(document.getElementById('detailModal'));
+      
+      // Load Master Data saat halaman dimuat untuk referensi Notes Master (Area Merah)
+      google.script.run.withSuccessHandler(data => {
+          masterProdukCache = data;
+      }).getMasterData();
+
       loadHistory();
     });
 
@@ -255,10 +263,26 @@
          if(item.size && item.size != "-") attr.push(`SZ: ${item.size}`);
          if(item.sizeCover && item.sizeCover != "-") attr.push(`CV: ${item.sizeCover}`);
 
+         // --- LOGIKA MENGAMBIL NOTES MASTER (AREA MERAH) ---
+         // Mencari data di cache Master Produk berdasarkan Kode Barang
+         let masterData = masterProdukCache.find(m => String(m[0]) === String(item.kode));
+         let masterNoteText = (masterData && masterData[3]) ? masterData[3] : "-";
+         
+         // Jika Master Note ada isinya, buat HTML-nya
+         let masterNoteHTML = "";
+         if(masterNoteText !== "-" && masterNoteText !== "") {
+             masterNoteHTML = `<span class="master-notes-text"><i class="material-icons">info</i> ${masterNoteText}</span>`;
+         }
+
+         // --- LOGIKA KETERANGAN MANUAL (AREA HIJAU) ---
+         // item.notes pada Code.gs getInboundHistory() sebenarnya berisi kolom 'Keterangan' dari database transaksi
+         let userNoteText = item.notes; 
+
          tr.innerHTML = `
            <td>
               <div class="fw-bold text-dark">${item.nama}</div>
               <div class="small text-muted font-monospace">${item.kode}</div>
+              ${masterNoteHTML}
            </td>
            <td>${item.brand}</td>
            <td>
@@ -267,7 +291,9 @@
            </td>
            <td><span class="badge bg-light text-dark border">${item.typeLoc}</span> <b>${item.lokasi}</b></td>
            <td class="small text-muted">${attr.join(', ') || '-'}</td>
-           <td class="small fst-italic text-muted" style="max-width:150px; overflow:hidden; text-overflow:ellipsis;">${item.notes}</td>
+           
+           <td class="small fst-italic text-dark">${userNoteText}</td>
+           
            <td class="text-end fw-bold fs-6">${item.qty}</td>
          `;
          tbody.appendChild(tr);
