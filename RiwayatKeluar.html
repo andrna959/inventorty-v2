@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <style>
+    /* Styling Konsisten dengan Dashboard & Riwayat Masuk */
+    :root { --primary: #2563eb; --bg-body: #f8f9fa; --card-bg: #ffffff; --border-color: #e9ecef; --text-muted: #64748b; --text-dark: #1e293b; }
+    body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; color: var(--text-dark); font-size: 14px; }
+    .content { margin-left: 250px; padding: 25px 40px; transition: all 0.3s; }
+    
+    .card-clean { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; padding: 20px; }
+    
+    .filter-label { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+    .form-control-sm { border-radius: 6px; border: 1px solid #cbd5e1; }
+    
+    .table-custom { width: 100%; border-collapse: separate; border-spacing: 0; }
+    .table-custom thead th { background: #f8f9fa; color: var(--text-muted); font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 15px; border-bottom: 2px solid #e2e8f0; }
+    .table-custom tbody td { padding: 15px; vertical-align: middle; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+    .table-custom tbody tr:hover { background-color: #f8fafc; }
+
+    .btn-primary-custom { background: var(--primary); border: none; font-weight: 600; padding: 8px 20px; border-radius: 6px; color: white; transition: 0.2s; }
+    .btn-primary-custom:hover { background: #1d4ed8; }
+    
+    .btn-print { 
+        background-color: #fff; 
+        color: #1e293b; 
+        border: 1px solid #cbd5e1; 
+        font-weight: 600; 
+        font-size: 11px; 
+        padding: 6px 12px; 
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        transition: 0.2s;
+        text-decoration: none;
+        cursor: pointer;
+    }
+    .btn-print:hover { background-color: #0f172a; color: #fff; border-color: #0f172a; }
+  </style>
+</head>
+<body>
+
+  <?!= include('Sidebar', {scriptUrl: scriptUrl, page: page}); ?>
+
+  <div class="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h3 class="fw-bold m-0 text-dark">Monitoring Outbound</h3>
+        <span class="text-muted small">Riwayat pengeluaran barang & Cetak Surat Jalan.</span>
+      </div>
+    </div>
+
+    <div class="card-clean">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <div class="filter-label">Pencarian (ID / Customer / SO)</div>
+          <div class="input-group">
+            <span class="input-group-text bg-white border-end-0"><i class="material-icons" style="font-size:18px">search</i></span>
+            <input type="text" id="f-search" class="form-control form-control-sm border-start-0" placeholder="Ketik nomor transaksi...">
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="filter-label">Dari Tanggal</div>
+          <input type="date" id="f-start" class="form-control form-control-sm">
+        </div>
+        <div class="col-md-3">
+          <div class="filter-label">Sampai Tanggal</div>
+          <input type="date" id="f-end" class="form-control form-control-sm">
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-primary-custom w-100 btn-sm" onclick="loadData()">
+            FILTER DATA
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-clean p-0 overflow-hidden">
+      <div class="table-responsive">
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th width="15%">ID Transaksi</th>
+              <th width="15%">Tanggal</th>
+              <th width="20%">Customer / Tujuan</th>
+              <th width="20%">No. Referensi (SO)</th>
+              <th width="10%" class="text-center">Jml SKU</th>
+              <th width="10%" class="text-center">Total Qty</th>
+              <th width="10%" class="text-end">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <tr><td colspan="7" class="text-center py-5 text-muted">Klik Filter untuk memuat data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    let globalData = [];
+
+    document.addEventListener("DOMContentLoaded", function() {
+       // Set Tanggal Default (Awal Bulan ini)
+       let date = new Date();
+       let firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+       let lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+       
+       const toLocalISO = (dt) => {
+          const offset = dt.getTimezoneOffset() * 60000;
+          return new Date(dt.getTime() - offset).toISOString().split('T')[0];
+       }
+
+       document.getElementById('f-start').value = toLocalISO(firstDay);
+       document.getElementById('f-end').value = toLocalISO(lastDay);
+
+       loadData();
+    });
+
+    function loadData() {
+       const start = document.getElementById('f-start').value;
+       const end = document.getElementById('f-end').value;
+       const tbody = document.getElementById('table-body');
+       
+       tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5"><div class="spinner-border text-primary spinner-border-sm"></div> Memuat Riwayat...</td></tr>';
+
+       google.script.run
+         .withSuccessHandler(renderTable)
+         .withFailureHandler(e => {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-danger">Error: ${e.message}</td></tr>`;
+         })
+         .getOutboundHistory(start, end);
+    }
+
+    function renderTable(data) {
+       const tbody = document.getElementById('table-body');
+       tbody.innerHTML = "";
+       globalData = data;
+
+       if(!data || data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted bg-light">Tidak ada transaksi keluar pada periode ini.</td></tr>';
+          return;
+       }
+
+       const keyword = document.getElementById('f-search').value.toLowerCase();
+       const filtered = data.filter(item => {
+          return item.id.toLowerCase().includes(keyword) || 
+                 item.customer.toLowerCase().includes(keyword) || 
+                 item.docNo.toLowerCase().includes(keyword);
+       });
+
+       if(filtered.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">Data tidak ditemukan.</td></tr>';
+          return;
+       }
+
+       filtered.forEach(row => {
+          let tr = document.createElement('tr');
+          tr.innerHTML = `
+             <td><span class="font-monospace fw-bold text-primary">${row.id}</span></td>
+             <td>${row.tgl}</td>
+             <td class="fw-bold">${row.customer}</td>
+             <td><span class="badge bg-light text-dark border">${row.docNo}</span></td>
+             <td class="text-center">${row.itemCount}</td>
+             <td class="text-center fw-bold">${row.totalQty}</td>
+             <td class="text-end">
+                <button class="btn-print" onclick="cetakSuratJalan('${row.id}')">
+                   <i class="material-icons me-1" style="font-size:16px">print</i> CETAK
+                </button>
+             </td>
+          `;
+          tbody.appendChild(tr);
+       });
+    }
+
+    // Realtime Search
+    document.getElementById('f-search').addEventListener('keyup', function() {
+       if(globalData.length > 0) renderTable(globalData);
+    });
+
+    function cetakSuratJalan(trxId) {
+       // Membuka tab baru ke halaman CetakSuratJalan dengan ID yang dipilih
+       let url = "<?= scriptUrl ?>?page=CetakSuratJalan&id=" + trxId;
+       window.open(url, '_blank');
+    }
+  </script>
+</body>
+</html>
