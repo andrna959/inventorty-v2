@@ -7,10 +7,9 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
   
   <style>
-    /* --- GLOBAL STYLE (SAMA DENGAN INBOUND) --- */
+    /* --- GLOBAL STYLE --- */
     :root { --primary: #2563eb; --bg-body: #f8f9fa; --card-bg: #ffffff; --border-color: #e9ecef; --text-label: #64748b; --text-dark: #1e293b; --error-bg: #fef2f2; --error-border: #fca5a5; --error-text: #b91c1c; }
     body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; color: var(--text-dark); font-size: 14px; }
     input[type="text"], textarea, .form-control { text-transform: uppercase; }
@@ -19,7 +18,7 @@
     /* HEADER STYLE */
     .odoo-header { background: white; border-bottom: 1px solid var(--border-color); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 99; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); margin: -25px -40px 30px -40px; }
     .status-badge { font-size: 13px; font-weight: 700; padding: 8px 16px; border-radius: 6px; }
-    .status-draft { background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; } /* Kuning untuk Outbound Draft */
+    .status-draft { background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; } 
     .status-done { background: #dcfce7; color: #166534; border: 1px solid #86efac; display: none; }
     
     /* CARD STYLE */
@@ -36,13 +35,6 @@
     .modal-content { border: none; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
     .modal-header { padding: 20px 30px; border-bottom: 1px solid #f1f5f9; }
     .modal-section-search { padding: 25px 30px 10px 30px; background: #fff; }
-    
-    /* PRODUCT DISPLAY CARD */
-    .product-display-card { background: #eff6ff; border: 1px solid #dbeafe; border-radius: 10px; padding: 15px 20px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
-    .product-title { font-size: 16px; font-weight: 700; color: #1e3a8a; margin-bottom: 2px; }
-    .product-brand { font-size: 12px; color: #60a5fa; font-weight: 600; text-transform: uppercase; }
-    .product-notes { font-size: 11px; color: #64748b; font-weight: 600; margin-top: 4px; font-style: italic; display: block; }
-    .hidden-logic-input { position: absolute; opacity: 0; pointer-events: none; }
     
     /* TABLES */
     .table-custom thead th { background: #f8f9fa; color: #64748b; font-size: 11px; font-weight: 700; padding: 15px; border-bottom: 2px solid #e2e8f0; }
@@ -81,7 +73,7 @@
       </div>
       <div class="d-flex gap-2">
         <button class="btn btn-light border fw-bold text-muted btn-sm px-3" onclick="resetAll()">RESET</button>
-        <button id="btn-validate" class="btn-primary-custom d-flex align-items-center py-2 px-4" onclick="validateOutbound()">
+        <button id="btn-validate" class="btn-primary-custom d-flex align-items-center py-2 px-4" onclick="validateOutbound()" disabled>
           <i class="material-icons me-2" style="font-size:18px;">local_shipping</i> PROSES OUTBOUND
         </button>
       </div>
@@ -162,25 +154,25 @@
             <datalist id="listProduk"></datalist>
             
             <input type="hidden" id="i-kode-asli">
-            <input type="text" id="i-nama" class="hidden-logic-input">
-            <input type="text" id="i-brand" class="hidden-logic-input">
-            <input type="text" id="i-notes-master" class="hidden-logic-input">
+            <input type="hidden" id="i-nama">
+            <input type="hidden" id="i-brand">
+            <input type="hidden" id="i-notes-master">
 
-            <div class="product-display-card">
+            <div class="p-3 bg-light border rounded d-flex justify-content-between align-items-center">
                <div>
-                  <div class="product-title" id="disp-nama">- Pilih Barang Dulu -</div>
-                  <div class="product-brand" id="disp-brand">BRAND: -</div>
-                  <div class="product-notes" id="disp-notes">NOTES: -</div>
+                  <div class="fw-bold text-primary" id="disp-nama" style="font-size:16px">- Pilih Barang Dulu -</div>
+                  <div class="text-muted small fw-bold" id="disp-brand">BRAND: -</div>
+                  <div class="text-muted small fst-italic mt-1" id="disp-notes">NOTES: -</div>
                </div>
-               <div class="text-end"><i class="material-icons text-primary opacity-25" style="font-size: 32px">verified</i></div>
+               <i class="material-icons text-primary opacity-25" style="font-size: 32px">verified</i>
             </div>
         </div>
 
-        <div class="modal-body p-4 pt-0">
+        <div class="modal-body p-4 pt-3">
             <div class="row g-3">
                <div class="col-md-6 offset-md-3">
                   <label class="form-label text-primary fw-bold text-center w-100" style="font-size:14px;">QTY REQUEST (BUTUH)</label>
-                  <input type="number" class="form-control form-control-lg qty-input border-primary" id="i-qty-req" placeholder="0">
+                  <input type="number" class="form-control form-control-lg text-center fw-bold text-primary border-primary" id="i-qty-req" placeholder="0" style="font-size:24px;">
                   <div class="form-text text-center">Masukkan jumlah total yang dibutuhkan.</div>
                </div>
             </div>
@@ -204,15 +196,15 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body p-0">
-           <div class="p-3 bg-white border-bottom">
-              <div class="d-flex justify-content-between">
+           <div class="p-3 bg-white border-bottom sticky-top">
+              <div class="d-flex justify-content-between align-items-center">
                  <div>
                     <div class="fw-bold fs-5" id="p-sku">SKU-001</div>
-                    <div class="text-muted" id="p-nama">Nama Produk</div>
+                    <div class="text-muted small" id="p-nama">Nama Produk</div>
                  </div>
                  <div class="text-end">
-                    <div class="small text-muted text-uppercase">Request</div>
-                    <div class="fw-bold fs-4 text-primary" id="p-req-qty">0</div>
+                    <div class="small text-muted text-uppercase fw-bold">Target Request</div>
+                    <div class="fw-bold fs-3 text-primary" id="p-req-qty">0</div>
                  </div>
               </div>
            </div>
@@ -222,20 +214,20 @@
                  <thead>
                     <tr>
                        <th>Lokasi</th>
-                       <th>Batch / Exp</th>
-                       <th>Attributes</th>
-                       <th class="text-center">Stock</th>
+                       <th>Batch / Expired</th>
+                       <th>Atribut</th>
+                       <th class="text-center">Stok</th>
                        <th class="text-center" width="120px">Pick Qty</th>
                     </tr>
                  </thead>
                  <tbody id="picking-body">
                     <tr><td colspan="5" class="text-center py-4">Memuat data stok...</td></tr>
                  </tbody>
-                 <tfoot class="table-light">
+                 <tfoot class="table-light sticky-bottom">
                     <tr>
                        <td colspan="3" class="text-end fw-bold align-middle">TOTAL PICKED:</td>
                        <td colspan="2" class="text-center align-middle">
-                          <span id="p-total-picked" class="fs-5 fw-bold text-danger">0</span>
+                          <span id="p-total-picked" class="fs-4 fw-bold text-danger">0</span>
                           <span class="text-muted mx-1">/</span>
                           <span id="p-total-target" class="fw-bold">0</span>
                        </td>
@@ -245,8 +237,8 @@
            </div>
         </div>
         <div class="modal-footer justify-content-between">
-           <span id="p-msg" class="small text-danger fw-bold"></span>
-           <button type="button" class="btn-primary-custom" id="btn-save-pick" onclick="savePicking()">
+           <span id="p-msg" class="small text-danger fw-bold ms-2"></span>
+           <button type="button" class="btn-primary-custom" id="btn-save-pick" onclick="savePicking()" disabled>
               <i class="material-icons align-middle me-2">check</i> SIMPAN PICKING
            </button>
         </div>
@@ -266,55 +258,67 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ============================================================
-    // A. SETUP & VARIABLE
+    // A. GLOBAL VARIABLE & SETUP
     // ============================================================
-    let cart = [];          // Format: { sku, nama, brand, notes, reqQty, pickedQty, pickDetails: [] }
+    let cart = []; // Array of { sku, nama, brand, notes, reqQty, pickedQty, pickDetails: [] }
     let masterProduk = [];
     let modalInputBS, modalPickingBS, modalScannerBS;
     let html5QrcodeScanner = null;
-    let editingIndex = -1;  // Index cart yang sedang diedit/picking
+    let editingIndex = -1; 
 
     document.addEventListener("DOMContentLoaded", function() {
+      // Set Default Date
       document.getElementById('h-tanggal').valueAsDate = new Date();
       
+      // Init Modals
       modalInputBS = new bootstrap.Modal(document.getElementById('modalInput'));
       modalPickingBS = new bootstrap.Modal(document.getElementById('modalPicking'));
       modalScannerBS = new bootstrap.Modal(document.getElementById('modalScanner'));
       
+      // Load Storage Draft (jika ada)
       loadFromStorage();
       
-      // Load Master Produk
+      // Load Master Produk untuk Datalist Search
       google.script.run.withSuccessHandler(d => {
         masterProduk = d;
         let list = document.getElementById("listProduk");
         list.innerHTML = "";
-        d.forEach(r => { let opt = document.createElement("option"); opt.value = r[0]; opt.label = r[1]; list.appendChild(opt); });
+        d.forEach(r => { 
+            let opt = document.createElement("option"); 
+            opt.value = r[0]; 
+            opt.label = r[1]; 
+            list.appendChild(opt); 
+        });
       }).getMasterData();
     });
 
     // ============================================================
-    // B. ADD SKU TO CART (REQUEST)
+    // B. LOGIKA INPUT REQUEST (DRAFTING)
     // ============================================================
     
+    // 1. Auto Fill saat Pilih Barang
     function isiOtomatis() {
       const val = document.getElementById("i-kode").value.trim().toUpperCase(); 
       const found = masterProduk.find(r => String(r[0]).toUpperCase() === val || String(r[1]).toUpperCase() === val);
+      
       if (found) { 
           document.getElementById("i-kode").value = found[0]; 
           document.getElementById("i-kode-asli").value = found[0]; 
           document.getElementById("i-nama").value = found[1]; 
           document.getElementById("i-brand").value = found[2]; 
+          document.getElementById("i-notes-master").value = found[3] || "-";
+
+          // Update Display Card
           document.getElementById("disp-nama").innerText = found[1]; 
           document.getElementById("disp-brand").innerText = "BRAND: " + found[2];
-          
-          let n = found[3] || "-";
-          document.getElementById("disp-notes").innerText = "NOTES: " + n;
-          document.getElementById("i-notes-master").value = n;
+          document.getElementById("disp-notes").innerText = "NOTES: " + (found[3] || "-");
 
+          // Focus ke Qty
           document.getElementById("i-qty-req").focus(); 
       }
     }
 
+    // 2. Tambah Barang ke Tabel (Cart)
     function addToCart() {
        let sku = document.getElementById('i-kode-asli').value || document.getElementById('i-kode').value;
        let req = parseInt(document.getElementById('i-qty-req').value);
@@ -323,12 +327,13 @@
           Swal.fire("Data Kurang", "Pastikan Produk dipilih dan Qty Request > 0", "warning"); return;
        }
 
-       // Cek duplikat SKU
+       // Cek Duplikat
        let exist = cart.find(x => x.sku === sku);
        if(exist) {
-          Swal.fire("Duplicate", "SKU ini sudah ada di daftar. Edit qty di tabel jika ingin mengubah.", "warning"); return;
+          Swal.fire("Duplicate", "SKU ini sudah ada di daftar.", "warning"); return;
        }
 
+       // Buat Item Baru
        let item = {
           sku: sku,
           nama: document.getElementById('i-nama').value,
@@ -336,99 +341,111 @@
           notes: document.getElementById('i-notes-master').value,
           reqQty: req,
           pickedQty: 0,
-          pickDetails: [] // Array of { batch, location, exp, qty, sticker, size, cover }
+          pickDetails: [] // Nanti diisi saat Picking
        };
 
        cart.push(item);
        saveToStorage();
        renderCart();
        
-       // Reset Form
+       // Reset Form Input
        document.getElementById('i-kode').value = "";
        document.getElementById('i-kode-asli').value = "";
-       document.getElementById('i-nama').value = "";
-       document.getElementById('disp-nama').innerText = "- Pilih Barang -";
        document.getElementById('i-qty-req').value = "";
+       document.getElementById("disp-nama").innerText = "- Pilih Barang Dulu -"; 
+       document.getElementById("disp-brand").innerText = "BRAND: -";
+       document.getElementById("disp-notes").innerText = "NOTES: -";
        
        modalInputBS.hide();
+       
+       Swal.fire({
+         icon: 'success', title: 'Berhasil', text: 'Silakan klik tombol PICK di tabel untuk mengambil stok.', 
+         timer: 1500, showConfirmButton: false
+       });
     }
 
     // ============================================================
-    // C. PICKING LOGIC (CORE OUTBOUND)
+    // C. LOGIKA PICKING (BATCH TAKING)
     // ============================================================
 
-    // 1. Buka Modal & Load Stock Available
+    // 1. Buka Modal Picking & Panggil Backend
     function openPickingModal(index) {
        editingIndex = index;
        let item = cart[index];
        
-       // UI Header
+       // Set Header Modal
        document.getElementById('p-sku').innerText = item.sku;
        document.getElementById('p-nama').innerText = item.nama;
        document.getElementById('p-req-qty').innerText = item.reqQty;
        document.getElementById('p-total-target').innerText = item.reqQty;
+       document.getElementById('p-total-picked').innerText = "0"; // Reset view
+       document.getElementById('btn-save-pick').disabled = true;
        
-       // Tampilkan Loading
+       // Loading Spinner
        let tbody = document.getElementById('picking-body');
-       tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4"><div class="spinner-border text-primary"></div><div class="mt-2 small">Mencari stok available...</div></td></tr>`;
+       tbody.innerHTML = `<tr><td colspan="5" class="text-center py-5"><div class="spinner-border text-primary"></div><div class="mt-2 small text-muted">Mencari stok tersedia...</div></td></tr>`;
        
        modalPickingBS.show();
 
-       // Panggil Backend untuk cari stok SKU ini
-       google.script.run.withSuccessHandler(stockList => {
-          renderPickingTable(stockList, item);
-       }).getAvailableStockForPicking(item.sku);
+       // CALL BACKEND: getAvailableStockForPicking
+       google.script.run
+         .withSuccessHandler(stockList => {
+            renderPickingTable(stockList, item);
+         })
+         .withFailureHandler(err => {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger fw-bold py-4">Error: ${err.message}</td></tr>`;
+         })
+         .getAvailableStockForPicking(item.sku);
     }
 
-    // 2. Render Tabel Picking
+    // 2. Render Tabel Picking (Looping Stok)
     function renderPickingTable(stockList, cartItem) {
        let tbody = document.getElementById('picking-body');
        tbody.innerHTML = "";
 
        if(!stockList || stockList.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-danger fw-bold">Stok Kosong / Tidak Tersedia!</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-danger fw-bold bg-light">STOK TIDAK TERSEDIA / KOSONG</td></tr>`;
           updatePickingTotal();
           return;
        }
 
        stockList.forEach((stk, idx) => {
-          // Cek apakah batch ini sudah ada di pickDetails cartItem
-          let alreadyPicked = 0;
-          let pickedRec = cartItem.pickDetails.find(p => 
+          // Cek apakah batch ini sudah pernah dipick sebelumnya (untuk pre-fill input)
+          let pickedVal = 0;
+          let existingPick = cartItem.pickDetails.find(p => 
              p.batch === stk.batch && p.lokasi === stk.lokasi && p.exp === stk.exp
           );
-          if(pickedRec) alreadyPicked = pickedRec.qty;
+          if(existingPick) pickedVal = existingPick.qty;
 
-          let tr = document.createElement('tr');
-          
-          // Format Attribute
+          // Format Atribut
           let attr = [];
-          if(stk.sticker && stk.sticker != "-") attr.push(`ST:${stk.sticker}`);
-          if(stk.size && stk.size != "-") attr.push(`SZ:${stk.size}`);
-          if(stk.cover && stk.cover != "-") attr.push(`CV:${stk.cover}`);
+          if(stk.sticker && stk.sticker != "-") attr.push(`<span class="badge bg-light text-dark border">ST:${stk.sticker}</span>`);
+          if(stk.size && stk.size != "-") attr.push(`<span class="badge bg-light text-dark border">SZ:${stk.size}</span>`);
+          if(stk.cover && stk.cover != "-") attr.push(`<span class="badge bg-light text-dark border">CV:${stk.cover}</span>`);
           
+          let tr = document.createElement('tr');
           tr.innerHTML = `
              <td>
                 <div class="fw-bold text-dark">${stk.lokasi}</div>
-                <div class="small text-muted badge bg-light text-dark border">${stk.typeLoc}</div>
+                <div class="small text-muted badge bg-secondary bg-opacity-10 text-secondary border">${stk.typeLoc}</div>
              </td>
              <td>
-                <div class="font-monospace small fw-bold">${stk.batch}</div>
-                <div class="small text-muted">${stk.exp || '-'}</div>
+                <div class="font-monospace fw-bold text-primary">${stk.batch}</div>
+                <div class="small text-muted">Exp: ${stk.exp || '-'}</div>
              </td>
-             <td class="small text-muted">${attr.join(' ') || '-'}</td>
-             <td class="text-center fw-bold fs-6">${stk.qty}</td>
-             <td class="text-center">
-                <input type="number" class="picking-input" 
+             <td>${attr.join(' ') || '-'}</td>
+             <td class="text-center fw-bold align-middle">${stk.qty}</td>
+             <td class="text-center align-middle">
+                <input type="number" class="picking-input form-control-sm" 
                    data-max="${stk.qty}" 
                    data-batch="${stk.batch}" 
                    data-loc="${stk.lokasi}" 
                    data-exp="${stk.exp}"
+                   data-typeloc="${stk.typeLoc}"
                    data-sticker="${stk.sticker}"
                    data-size="${stk.size}"
                    data-cover="${stk.cover}"
-                   data-typeloc="${stk.typeLoc}"
-                   value="${alreadyPicked}" 
+                   value="${pickedVal}" 
                    min="0" max="${stk.qty}" 
                    oninput="updatePickingTotal()"
                    onfocus="this.select()">
@@ -437,20 +454,29 @@
           tbody.appendChild(tr);
        });
        
-       updatePickingTotal();
+       updatePickingTotal(); // Hitung total awal
     }
 
-    // 3. Hitung Total Real-time
+    // 3. Kalkulasi Real-time & Validasi
     function updatePickingTotal() {
        let inputs = document.querySelectorAll('.picking-input');
        let total = 0;
        
        inputs.forEach(inp => {
-          let val = parseInt(inp.value) || 0;
+          let val = parseInt(inp.value);
           let max = parseInt(inp.getAttribute('data-max'));
           
-          if(val > max) { val = max; inp.value = max; } // Prevent over pick
-          if(val < 0) { val = 0; inp.value = 0; }
+          if(isNaN(val)) val = 0;
+          
+          // Validasi: Tidak boleh lebih dari stok
+          if(val > max) { 
+             val = max; 
+             inp.value = max; 
+          } 
+          if(val < 0) { 
+             val = 0; 
+             inp.value = 0; 
+          }
           
           total += val;
        });
@@ -462,26 +488,28 @@
 
        dispTotal.innerText = total;
        
-       // Visual Feedback
+       // Logika Tombol Simpan
        if(total === req) {
-          dispTotal.className = "fs-5 fw-bold text-success";
-          msg.innerText = "OK. Jumlah sesuai.";
-          msg.className = "small text-success fw-bold";
+          dispTotal.className = "fs-4 fw-bold text-success";
+          msg.innerText = "PAS! Siap disimpan.";
+          msg.className = "small text-success fw-bold ms-2";
           btn.disabled = false;
+          btn.classList.remove('btn-secondary');
+          btn.classList.add('btn-primary-custom');
        } else if (total > req) {
-          dispTotal.className = "fs-5 fw-bold text-danger";
-          msg.innerText = "OVER! Melebihi request.";
-          msg.className = "small text-danger fw-bold";
-          // btn.disabled = true; // Optional: boleh over pick? biasanya tidak.
+          dispTotal.className = "fs-4 fw-bold text-danger";
+          msg.innerText = "KELEBIHAN! Kurangi input.";
+          msg.className = "small text-danger fw-bold ms-2";
+          btn.disabled = true;
        } else {
-          dispTotal.className = "fs-5 fw-bold text-warning";
-          msg.innerText = "Kurang dari request.";
-          msg.className = "small text-warning fw-bold";
-          btn.disabled = false; // Boleh partial pick
+          dispTotal.className = "fs-4 fw-bold text-warning";
+          msg.innerText = `KURANG ${req - total} pcs lagi.`;
+          msg.className = "small text-warning fw-bold ms-2";
+          btn.disabled = true; // Matikan tombol jika belum pas (sesuai best practice)
        }
     }
 
-    // 4. Save Picking ke Cart
+    // 4. Simpan Picking ke Cart
     function savePicking() {
        let inputs = document.querySelectorAll('.picking-input');
        let newDetails = [];
@@ -504,7 +532,7 @@
           }
        });
 
-       // Update Cart Data
+       // Update Cart Global
        if(editingIndex >= 0) {
           cart[editingIndex].pickDetails = newDetails;
           cart[editingIndex].pickedQty = totalPicked;
@@ -513,39 +541,46 @@
        saveToStorage();
        renderCart();
        modalPickingBS.hide();
-       validateOutboundButtons(); // Cek apakah tombol final bisa aktif
+       
+       Swal.fire({
+         icon: 'success', title: 'Picking Tersimpan', toast: true, position: 'top-end', showConfirmButton: false, timer: 1000
+       });
     }
 
     // ============================================================
-    // D. RENDER & ACTIONS
+    // D. FINALISASI & RENDER UTAMA
     // ============================================================
 
     function renderCart() {
-       let tbody = document.getElementById('cart-body'); tbody.innerHTML = "";
-       if(cart.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="p-5 text-center text-muted">Belum ada barang. Klik Tambah SKU.</td></tr>`; document.getElementById('total-items').innerText = "0 Item"; return; }
+       let tbody = document.getElementById('cart-body'); 
+       tbody.innerHTML = "";
+       
+       if(cart.length === 0) { 
+          tbody.innerHTML = `<tr><td colspan="6" class="p-5 text-center text-muted">Belum ada barang. Klik Tambah SKU.</td></tr>`; 
+          document.getElementById('total-items').innerText = "0 Item"; 
+          validateOutboundButtons(); // Update tombol validate
+          return; 
+       }
        
        cart.forEach((item, index) => {
-          // Status Warna Picking
-          let pickStatusClass = "text-danger";
-          let progressPercent = 0;
-          if(item.pickedQty >= item.reqQty) { pickStatusClass = "text-success"; progressPercent = 100; }
-          else if(item.pickedQty > 0) { pickStatusClass = "text-warning"; progressPercent = (item.pickedQty/item.reqQty)*100; }
+          // Progress Bar Visual
+          let progressPercent = (item.pickedQty / item.reqQty) * 100;
+          let progressClass = "progress-bar-picking";
+          if(progressPercent >= 100) progressClass += " progress-complete";
 
-          // Notes Master
-          let masterNote = item.notes && item.notes !== "-" ? `<div class="small text-muted fst-italic mt-1"><i class="material-icons" style="font-size:10px">info</i> ${item.notes}</div>` : "";
-
-          // Detail Picking String
+          // Detail Picking di Tabel Utama
           let pickInfo = "";
           if(item.pickDetails.length > 0) {
              pickInfo = `<div class="d-flex flex-column gap-1">`;
              item.pickDetails.forEach(d => {
-                pickInfo += `<span class="badge bg-light text-dark border d-flex justify-content-between" style="font-size:11px;">
-                   <span>${d.lokasi} [${d.batch}]</span> <strong>${d.qty}</strong>
+                pickInfo += `<span class="badge bg-white text-dark border d-flex justify-content-between align-items-center px-2 py-1" style="font-size:11px;">
+                   <span><i class="material-icons align-middle text-muted me-1" style="font-size:12px">place</i>${d.lokasi} <span class="text-muted">[${d.batch}]</span></span> 
+                   <strong class="text-primary">${d.qty}</strong>
                 </span>`;
              });
              pickInfo += `</div>`;
           } else {
-             pickInfo = `<span class="text-muted small fst-italic">Belum picking</span>`;
+             pickInfo = `<span class="badge bg-warning text-dark bg-opacity-25 border border-warning" style="font-size:10px">BELUM DIPICKING</span>`;
           }
 
           let tr = document.createElement('tr');
@@ -553,17 +588,16 @@
             <td class="text-center fw-bold text-muted">${index + 1}</td>
             <td>
                 <div class="fw-bold text-dark">${item.nama}</div>
-                <div class="small text-muted badge bg-light text-dark border">${item.sku}</div>
-                ${masterNote}
+                <div class="small text-muted font-monospace">${item.sku}</div>
             </td>
             <td class="text-center align-middle">
-               <span class="fs-6 fw-bold text-dark">${item.reqQty}</span>
+               <span class="fs-5 fw-bold text-dark">${item.reqQty}</span>
             </td>
             <td class="text-center align-middle">
-               <span class="fs-6 fw-bold ${pickStatusClass}">${item.pickedQty}</span>
-               <div class="progress-picking"><div class="progress-bar-picking ${item.pickedQty>=item.reqQty?'progress-complete':''}" style="width:${progressPercent}%"></div></div>
+               <span class="fs-5 fw-bold ${item.pickedQty >= item.reqQty ? 'text-success' : 'text-danger'}">${item.pickedQty}</span>
+               <div class="progress-picking"><div class="${progressClass}" style="width:${progressPercent}%"></div></div>
             </td>
-            <td class="align-top pt-3">${pickInfo}</td>
+            <td class="align-top pt-3 bg-light bg-opacity-50">${pickInfo}</td>
             <td class="text-end align-middle">
                <div class="btn-action-group">
                   <button class="btn btn-sm btn-primary text-white" onclick="openPickingModal(${index})">
@@ -581,37 +615,21 @@
        validateOutboundButtons();
     }
 
-    function hapusCart(index) { cart.splice(index, 1); saveToStorage(); renderCart(); }
-    
-    function resetAll() { if(cart.length>0 && !confirm("Reset Form?")) return; localStorage.removeItem("wms_outbound_cart"); location.reload(); }
-    
-    function saveToStorage() { localStorage.setItem("wms_outbound_cart", JSON.stringify(cart)); }
-    
-    function loadFromStorage() { 
-       let s = localStorage.getItem("wms_outbound_cart"); 
-       if(s) { cart = JSON.parse(s); renderCart(); } 
-    }
-
-    // ============================================================
-    // E. VALIDATION & SAVE TRANSACTION
-    // ============================================================
-
+    // Tombol Validasi hanya aktif jika semua barang sudah dipick 100%
     function validateOutboundButtons() {
        let btn = document.getElementById('btn-validate');
        if(cart.length === 0) { btn.disabled = true; return; }
        
-       // Cek apakah SEMUA item sudah full picked
        let allComplete = cart.every(i => i.pickedQty >= i.reqQty);
        
        if(allComplete) {
           btn.disabled = false;
-          btn.classList.remove('btn-secondary');
-          btn.classList.add('btn-primary-custom');
        } else {
-          btn.disabled = true; // Disabled sampai semua picked
+          btn.disabled = true;
        }
     }
 
+    // FINAL: Simpan Transaksi
     function validateOutbound() {
        let header = {
           tanggal: document.getElementById('h-tanggal').value,
@@ -626,7 +644,7 @@
 
        Swal.fire({ 
           title: 'Proses Outbound?', 
-          text: `Mengeluarkan ${cart.length} SKU dari stok?`, 
+          text: `Akan mengeluarkan ${cart.length} SKU dan mengurangi stok batch terkait.`, 
           icon: 'warning', 
           showCancelButton: true, 
           confirmButtonText: 'YA, PROSES', 
@@ -634,23 +652,43 @@
        }).then((result) => { 
           if (result.isConfirmed) { 
              let btn = document.getElementById('btn-validate'); 
-             btn.innerHTML = "LOADING..."; btn.disabled = true; 
+             let oriText = btn.innerHTML;
+             btn.innerHTML = "MEMPROSES..."; btn.disabled = true; 
              
              google.script.run.withSuccessHandler((res) => { 
                 if(res.success) { 
-                   Swal.fire("Sukses!", res.message, "success"); 
+                   
+                   // [REVISI] POPUP SUKSES DENGAN TOMBOL CETAK
+                   Swal.fire({
+                      title: 'Outbound Berhasil!',
+                      html: `ID Transaksi: <b>${res.trxId}</b><br>Stok berhasil dikurangi.`,
+                      icon: 'success',
+                      showCancelButton: true,
+                      confirmButtonText: '🖨️ CETAK SURAT JALAN', // Tombol Print
+                      cancelButtonText: 'Tutup',
+                      confirmButtonColor: '#000',
+                      allowOutsideClick: false
+                   }).then((printRes) => {
+                      if (printRes.isConfirmed) {
+                          // Buka Tab Baru ke Halaman Cetak
+                          window.open("<?= scriptUrl ?>?page=CetakSuratJalan&id=" + res.trxId, '_blank');
+                      }
+                   });
+                   
+                   // Update UI Status (Tetap jalan di background)
                    document.getElementById('status-draft').style.display = 'none'; 
                    document.getElementById('status-done').style.display = 'inline-block'; 
                    document.getElementById('final-trx-id').innerText = res.trxId; 
                    
-                   // Disable Form
+                   // Kunci Layar
                    document.querySelectorAll('input, button, textarea').forEach(e => e.disabled = true); 
-                   document.querySelector('.btn-close').disabled = false; // Kecuali close modal
+                   document.querySelector('.btn-close').disabled = false;
                    
                    cart = []; saveToStorage(); 
+
                 } else { 
                    Swal.fire("Gagal", res.message, "error"); 
-                   btn.innerHTML = '<i class="material-icons me-2" style="font-size:18px;">local_shipping</i> PROSES OUTBOUND'; 
+                   btn.innerHTML = oriText; 
                    btn.disabled = false; 
                 } 
              }).processOutboundTransaction(header, cart); 
@@ -658,17 +696,18 @@
        });
     }
 
-    // ============================================================
-    // F. SCANNER & HELPER
-    // ============================================================
-    function openInputModal() {
+    // --- Helper UI ---
+    function hapusCart(index) { cart.splice(index, 1); saveToStorage(); renderCart(); }
+    function resetAll() { if(cart.length>0 && !confirm("Reset Form?")) return; localStorage.removeItem("wms_outbound_cart"); location.reload(); }
+    function saveToStorage() { localStorage.setItem("wms_outbound_cart", JSON.stringify(cart)); }
+    function loadFromStorage() { let s = localStorage.getItem("wms_outbound_cart"); if(s) { cart = JSON.parse(s); renderCart(); } }
+
+    function openInputModal() { 
        document.getElementById('i-qty-req').value = "";
-       // Reset search
        document.getElementById('i-kode').value = "";
        document.getElementById('i-kode-asli').value = "";
-       document.getElementById('disp-nama').innerText = "- Pilih Barang -";
-       modalInputBS.show();
-       setTimeout(() => document.getElementById('i-kode').focus(), 500);
+       modalInputBS.show(); 
+       setTimeout(() => document.getElementById('i-kode').focus(), 500); 
     }
 
     function bukaScanner() { modalScannerBS.show(); setTimeout(() => { if (!html5QrcodeScanner) html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 20, qrbox: 200 }, false); html5QrcodeScanner.render(onScanSuccess); }, 500); }
