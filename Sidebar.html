@@ -6,31 +6,29 @@
     --transition-speed: 0.3s;
 
     /* DARK MODE (DEFAULT - THOR LOOK) */
-    --bg-body: #0f172a;       /* Background Halaman Gelap */
-    --bg-sidebar: #111827;    /* Sidebar Sedikit Lebih Terang */
-    --text-primary: #f3f4f6;  /* Putih */
-    --text-muted: #9ca3af;    /* Abu-abu */
-    --accent-color: #2dd4bf;  /* NEON TEAL (Hijau Tosca Thor) */
-    --accent-text: #0f172a;   /* Teks Hitam di atas Neon */
-    --hover-bg: #1f2937;      /* Efek Hover */
+    --bg-body: #0f172a;
+    --bg-sidebar: #111827;
+    --text-primary: #f3f4f6;
+    --text-muted: #9ca3af;
+    --accent-color: #2dd4bf;  /* NEON TEAL */
+    --accent-text: #0f172a;
+    --hover-bg: #1f2937;
     --border-color: #1f2937;
     --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
   }
 
-  /* LIGHT MODE (OPSIONAL - Jika di-switch) */
   [data-theme="light"] {
     --bg-body: #f1f5f9;
     --bg-sidebar: #ffffff;
     --text-primary: #1e293b;
     --text-muted: #64748b;
-    --accent-color: #2563eb;  /* Biru Modern */
+    --accent-color: #2563eb;
     --accent-text: #ffffff;
     --hover-bg: #f8fafc;
     --border-color: #e2e8f0;
     --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   }
 
-  /* --- 2. LAYOUT UTAMA --- */
   body {
     background-color: var(--bg-body);
     transition: background-color var(--transition-speed);
@@ -54,13 +52,11 @@
     box-shadow: var(--shadow);
   }
 
-  /* SAAT MENGECIL (COLLAPSED) */
   #sidebar.collapsed {
     width: var(--sidebar-collapsed-width);
     padding: 20px 10px;
   }
 
-  /* --- 3. LOGO AREA --- */
   .sidebar-header {
     display: flex;
     align-items: center;
@@ -75,34 +71,19 @@
     height: 42px;
     background: var(--accent-color);
     color: var(--accent-text);
-    border-radius: 12px; /* Rounded Box */
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 900;
     font-size: 24px;
-    box-shadow: 0 0 15px rgba(45, 212, 191, 0.3); /* Efek Glow Neon */
+    box-shadow: 0 0 15px rgba(45, 212, 191, 0.3);
   }
-  .logo-text {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--text-primary);
-    opacity: 1;
-    transition: opacity 0.2s;
-  }
-  .logo-sub {
-    font-size: 10px;
-    color: var(--text-muted);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-  /* Sembunyikan teks saat collapsed */
-  #sidebar.collapsed .logo-text, 
-  #sidebar.collapsed .logo-sub {
-    display: none;
-  }
+  .logo-text { font-size: 18px; font-weight: 700; color: var(--text-primary); opacity: 1; transition: opacity 0.2s; }
+  .logo-sub { font-size: 10px; color: var(--text-muted); letter-spacing: 2px; text-transform: uppercase; }
 
-  /* --- 4. MENU ITEMS (GAYA PILL SHAPE) --- */
+  #sidebar.collapsed .logo-text, #sidebar.collapsed .logo-sub { display: none; }
+
   .menu-category {
     font-size: 10px;
     font-weight: 800;
@@ -116,126 +97,53 @@
 
   .nav-item { margin-bottom: 5px; }
 
-  /* Tombol Menu Utama */
   .nav-link {
-    display: flex;
-    align-items: center;
-    padding: 12px 16px;
-    color: var(--text-muted);
-    border-radius: 14px; /* Pill Shape Modern */
-    text-decoration: none;
-    transition: all 0.2s ease;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    background: transparent;
-    border: none;
-    width: 100%;
-    text-align: left;
+    display: flex; align-items: center; padding: 12px 16px;
+    color: var(--text-muted); border-radius: 14px;
+    text-decoration: none; transition: all 0.2s ease;
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    background: transparent; border: none; width: 100%; text-align: left;
   }
   
-  .nav-link:hover {
-    background-color: var(--hover-bg);
-    color: var(--text-primary);
-  }
-
-  .nav-link i.main-icon {
-    font-size: 22px;
-    min-width: 24px;
-    margin-right: 12px;
-    text-align: center;
-    color: var(--text-muted);
-    transition: color 0.2s;
-  }
-
+  .nav-link:hover { background-color: var(--hover-bg); color: var(--text-primary); }
+  .nav-link i.main-icon { font-size: 22px; min-width: 24px; margin-right: 12px; text-align: center; color: var(--text-muted); transition: color 0.2s; }
   .nav-link span { flex-grow: 1; white-space: nowrap; }
-
-  /* Panah Rotasi */
-  .arrow-icon {
-    font-size: 18px;
-    transition: transform 0.3s;
-    opacity: 0.5;
-  }
+  .arrow-icon { font-size: 18px; transition: transform 0.3s; opacity: 0.5; }
   .nav-link[aria-expanded="true"] .arrow-icon { transform: rotate(180deg); }
 
-  /* STATE AKTIF (NEON) */
-  .nav-link.active-single {
-    background-color: var(--accent-color);
-    color: var(--accent-text) !important;
-    font-weight: 700;
-    box-shadow: 0 4px 15px rgba(45, 212, 191, 0.25); /* Glow */
-  }
+  .nav-link.active-single { background-color: var(--accent-color); color: var(--accent-text) !important; font-weight: 700; box-shadow: 0 4px 15px rgba(45, 212, 191, 0.25); }
   .nav-link.active-single i.main-icon { color: var(--accent-text) !important; }
 
-  /* Parent Aktif (Saat anaknya dibuka) */
-  .nav-link.active-parent {
-    background-color: var(--hover-bg);
-    color: var(--accent-color) !important;
-    font-weight: 700;
-  }
+  .nav-link.active-parent { background-color: var(--hover-bg); color: var(--accent-color) !important; font-weight: 700; }
   .nav-link.active-parent i.main-icon { color: var(--accent-color) !important; }
 
-  /* Penyesuaian saat Collapsed */
   #sidebar.collapsed .nav-link { justify-content: center; padding: 12px; }
-  #sidebar.collapsed .nav-link span, 
-  #sidebar.collapsed .arrow-icon { display: none; }
+  #sidebar.collapsed .nav-link span, #sidebar.collapsed .arrow-icon { display: none; }
   #sidebar.collapsed .nav-link i.main-icon { margin-right: 0; }
 
-  /* --- 5. SUBMENU (ACCORDION) --- */
-  .collapse {
-    padding-left: 10px;
-  }
-  .submenu-list {
-    list-style: none;
-    padding: 5px 0;
-    margin: 0;
-    border-left: 2px solid var(--border-color); /* Garis panduan vertikal */
-    margin-left: 21px;
-  }
+  .collapse { padding-left: 10px; }
+  .submenu-list { list-style: none; padding: 5px 0; margin: 0; border-left: 2px solid var(--border-color); margin-left: 21px; }
   .submenu-item { margin-bottom: 2px; }
   
   .submenu-item a {
-    display: block;
-    padding: 8px 15px;
-    font-size: 13px;
-    color: var(--text-muted);
-    text-decoration: none;
-    border-radius: 8px;
-    transition: 0.2s;
-    white-space: nowrap;
+    display: block; padding: 8px 15px; font-size: 13px; color: var(--text-muted);
+    text-decoration: none; border-radius: 8px; transition: 0.2s; white-space: nowrap;
   }
-  .submenu-item a:hover {
-    color: var(--text-primary);
-    padding-left: 20px; /* Efek geser kanan */
-  }
+  .submenu-item a:hover { color: var(--text-primary); padding-left: 20px; }
   
-  /* Submenu Aktif */
   .submenu-item a.active {
-    color: var(--accent-color);
-    font-weight: 700;
+    color: var(--accent-color); font-weight: 700;
     background: linear-gradient(90deg, var(--hover-bg) 0%, transparent 100%);
-    border-left: 3px solid var(--accent-color); /* Indikator kiri */
+    border-left: 3px solid var(--accent-color);
   }
 
   #sidebar.collapsed .collapse { display: none !important; }
 
-  /* --- 6. FOOTER (SETTINGS) --- */
-  .sidebar-footer {
-    margin-top: auto;
-    padding-top: 20px;
-    border-top: 1px solid var(--border-color);
-  }
-  .footer-item {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px; border-radius: 12px;
-    cursor: pointer; transition: 0.2s;
-    color: var(--text-muted);
-  }
+  .sidebar-footer { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border-color); }
+  .footer-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-radius: 12px; cursor: pointer; transition: 0.2s; color: var(--text-muted); }
   .footer-item:hover { background-color: var(--hover-bg); color: var(--text-primary); }
-  
   #sidebar.collapsed .footer-text { display: none; }
   
-  /* Scrollbar Halus */
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
@@ -244,9 +152,7 @@
 <nav id="sidebar">
   
   <div class="sidebar-header">
-    <div class="logo-box">
-      <i class="material-icons">bolt</i>
-    </div>
+    <div class="logo-box"><i class="material-icons">bolt</i></div>
     <div style="margin-left: 12px;">
       <div class="logo-text">WMS System</div>
       <div class="logo-sub">WAREHOUSE PRO</div>
@@ -292,6 +198,21 @@
       </div>
     </div>
 
+    <div class="nav-item">
+      <button class="nav-link" data-bs-toggle="collapse" data-bs-target="#menuPutaway" aria-expanded="false">
+        <i class="material-icons main-icon">warehouse</i>
+        <span>Putaway</span>
+        <i class="material-icons arrow-icon">expand_more</i>
+      </button>
+      <div class="collapse" id="menuPutaway">
+        <ul class="submenu-list">
+          <li class="submenu-item"><a href="<?= scriptUrl ?>?page=PutawayPartial" data-page="PutawayPartial">Partial Move</a></li>
+          <li class="submenu-item"><a href="<?= scriptUrl ?>?page=PutawayAll" data-page="PutawayAll">Move All</a></li>
+          <li class="submenu-item"><a href="<?= scriptUrl ?>?page=RiwayatPutaway" data-page="RiwayatPutaway">Monitoring Putaway</a></li>
+        </ul>
+      </div>
+    </div>
+
     <div class="menu-category">MASTER DATA</div>
 
     <div class="nav-item">
@@ -304,7 +225,7 @@
         <ul class="submenu-list">
           <li class="submenu-item"><a href="<?= scriptUrl ?>?page=MasterProduk" data-page="MasterProduk">Master Produk</a></li>
           <li class="submenu-item"><a href="<?= scriptUrl ?>?page=BatchProduct" data-page="BatchProduct">Batch Produk</a></li>
-          <li class="submenu-item"><a href="#" data-page="stock-log">Riwayat Stok</a></li>
+          <li class="submenu-item"><a href="<?= scriptUrl ?>?page=StockLog" data-page="StockLog">Riwayat Stok</a></li>
         </ul>
       </div>
     </div>
@@ -342,37 +263,29 @@
 </nav>
 
 <script>
-  // --- JAVASCRIPT LOGIC (PERBAIKAN NAVIGASI) ---
   const SIDEBAR_WIDTH = '260px';
   const SIDEBAR_COLLAPSED_WIDTH = '80px';
 
   document.addEventListener("DOMContentLoaded", function() {
-    // 1. Load Status Terakhir (Tema & Sidebar)
-    const savedTheme = localStorage.getItem('theme') || 'dark'; // Default DARK
+    const savedTheme = localStorage.getItem('theme') || 'dark';
     setTheme(savedTheme);
     
     const savedSidebar = localStorage.getItem('sidebarState');
     if(savedSidebar === 'collapsed') toggleSidebar(false);
 
-    // 2. DETEKSI HALAMAN AKTIF (Auto Open & Highlight)
     const params = new URLSearchParams(window.location.search);
     const currentPage = params.get('page') || 'dashboard';
 
-    // Handle Dashboard (Single Link)
     if(currentPage === 'dashboard') {
         document.getElementById('link-dashboard').classList.add('active-single');
     }
 
-    // Handle Submenu Links
     document.querySelectorAll('.submenu-item a').forEach(link => {
        if(link.getAttribute('data-page') === currentPage) {
-           link.classList.add('active'); // Warna Neon di anak
-           
-           // Buka Parent (Induk) Otomatis
+           link.classList.add('active');
            const collapseDiv = link.closest('.collapse');
            if(collapseDiv) {
                collapseDiv.classList.add('show');
-               // Highlight Tombol Parent
                const parentBtn = document.querySelector(`[data-bs-target="#${collapseDiv.id}"]`);
                if(parentBtn) {
                    parentBtn.classList.add('active-parent');
@@ -382,25 +295,17 @@
        }
     });
 
-    // 3. FIX NAVIGASI PARENT (SOLUSI MASALAH ANDA)
-    // Kode ini memaksa menu lain menutup saat menu baru diklik
     document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(btn => {
        btn.addEventListener('click', function() {
           const sidebar = document.getElementById('sidebar');
-          // Jika sidebar sedang kecil, besarkan dulu biar submenu terlihat
           if(sidebar.classList.contains('collapsed')) {
               toggleSidebar();
           }
 
-          const targetId = this.getAttribute('data-bs-target'); // ID menu yang mau dibuka
-          
-          // Cari semua menu yang SEDANG TERBUKA
+          const targetId = this.getAttribute('data-bs-target');
           document.querySelectorAll('.collapse.show').forEach(el => {
-              // Jika menu terbuka BUKAN yang sedang diklik -> TUTUP PAKSA
               if('#' + el.id !== targetId) {
                   new bootstrap.Collapse(el, {toggle: false}).hide();
-                  
-                  // Hapus highlight dari parent menu yang ditutup
                   const otherBtn = document.querySelector(`[data-bs-target="#${el.id}"]`);
                   if(otherBtn) {
                       otherBtn.classList.remove('active-parent');
@@ -412,7 +317,6 @@
     });
   });
 
-  // --- FUNGSI GANTI TEMA ---
   function toggleTheme() {
      const current = document.documentElement.getAttribute('data-theme');
      const next = current === 'dark' ? 'light' : 'dark';
@@ -423,30 +327,24 @@
   function setTheme(theme) {
      document.documentElement.setAttribute('data-theme', theme);
      const icon = document.getElementById('themeIcon');
-     // Ganti icon sesuai mode
      icon.innerText = theme === 'dark' ? 'light_mode' : 'dark_mode';
   }
 
-  // --- FUNGSI COLLAPSE SIDEBAR ---
   function toggleSidebar(save = true) {
      const sidebar = document.getElementById('sidebar');
-     const content = document.querySelector('.content'); // Mencari div content utama
+     const content = document.querySelector('.content');
      const icon = document.getElementById('collapseIcon');
      
      sidebar.classList.toggle('collapsed');
      const isCollapsed = sidebar.classList.contains('collapsed');
-     
-     // Ubah Icon Panah
      icon.innerText = isCollapsed ? 'keyboard_double_arrow_right' : 'keyboard_double_arrow_left';
      
-     // Geser Konten Utama (Jika ada div class="content")
      if(content) {
          content.style.marginLeft = isCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH;
      }
 
      if(save) localStorage.setItem('sidebarState', isCollapsed ? 'collapsed' : 'expanded');
      
-     // Tutup semua submenu agar rapi saat mengecil
      if(isCollapsed) {
          document.querySelectorAll('.collapse.show').forEach(el => {
              new bootstrap.Collapse(el, {toggle: false}).hide();
