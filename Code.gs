@@ -1,663 +1,1261 @@
-// ==========================================================
-// CONFIGURATION - FINAL VERSION (INTEGRATED WITH BATCH_MAP)
-// ==========================================================
-const CONFIG = {
-  APP_NAME: "WMS Inventory System",
-  
-  // 1. INFO PERUSAHAAN (Untuk Header Surat Jalan & Dokumen)
-  COMPANY_INFO: {
-    NAME: "PT SOCIAL BELLA INDONESIA",
-    ADDRESS: "St. Moritz Office Tower Lt. 15, Jl. Puri Indah Raya, Jakarta Barat 11610",
-    WAREHOUSE: "Gudang Cikupa, Tangerang"
-  },
+var ss = SpreadsheetApp.getActiveSpreadsheet();
+var produkSheet = ss.getSheetByName("DataProduk");
+var masukSheet = ss.getSheetByName("ProdukMasuk");
+var keluarSheet = ss.getSheetByName("ProdukKeluar");
 
-  // 2. KONFIGURASI TANDA TANGAN DINAMIS
-  SIGNATURES: [
-    { 
-      title: "PACKER", 
-      defaultName: "Warehouse Staff", 
-      showDate: true,
-      isCustomer: false
-    },
-    { 
-      title: "SECURITY", 
-      defaultName: "LP", 
-      showDate: true,
-      isCustomer: false
-    },
-    { 
-      title: "RECEIVED BY", 
-      defaultName: "", 
-      isCustomer: true, // Ambil nama customer dari data transaksi secara otomatis
-      showDate: true 
-    }
-  ],
-
-  // 3. NAMA SHEET (Database)
-  SHEET_NAMES: {
-    MASTER_VIEW: "MasterProduk", 
-    INBOUND: "StokMasuk",
-    OUTBOUND: "StokKeluar",
-    BATCH_PRODUCT: "BatchProduct", 
-    SUPPORT: "DataPendukung",
-    PUTAWAY_LOG: "RiwayatPutaway" // Log khusus untuk mencatat histori pemindahan rak
-  },
-
-  // 4. PEMETAAN KOLOM BATCH PRODUCT (Koordinat Database Utama)
-  // Memetakan indeks array (0-12) ke nama kolom di sheet BatchProduct
-  BATCH_MAP: {
-    ID: 0,           // Kolom A
-    KODE: 1,         // Kolom B
-    NAMA: 2,         // Kolom C
-    BRAND: 3,        // Kolom D
-    QTY: 4,          // Kolom E
-    TYPE_LOC: 5,     // Kolom F
-    LOKASI: 6,       // Kolom G
-    BATCH: 7,        // Kolom H
-    EXP: 8,          // Kolom I
-    STICKER: 9,      // Kolom J
-    COVER: 10,       // Kolom K
-    SIZE: 11,        // Kolom L
-    LAST_UPDATE: 12  // Kolom M
-  },
-
-  // 5. SETTING MODUL PUTAWAY
-  PUTAWAY_SETTINGS: {
-    DEFAULT_TRANSIT_LOC: "TRANSIT", // Lokasi default barang yang baru masuk (Inbound)
-    MODES: {
-      PARTIAL: "PARTIAL MOVE", // Pemindahan sebagian Qty
-      ALL: "MOVE ALL"          // Pemindahan satu batch utuh
-    }
-  },
-
-  // 6. KONFIGURASI TEKNIS & HEADERS
-  HEADERS: {
-    BATCH: 13, // Total 13 kolom di sheet BatchProduct
-    INBOUND: 17 
-  },
-
-  // Kunci pencocokan untuk logika penggabungan stok (Merge Logic)
-  INBOUND_MATCH_KEYS: [
-    "kodeBarang", "typeLokasi", "lokasi", "noBatch",
-    "expiredDate", "typeSticker", "sizeCover", "size", "keterangan"
-  ],
-
-  // Template untuk fitur Import CSV
-  CSV_TEMPLATE: {
-    HEADERS: [
-      "KODE", "QTY", "TYPE LOKASI", "LOKASI", "BATCH", "EXPIRED",
-      "TYPE STICKER", "SIZE COVER", "SIZE PRODUK", "KETERANGAN"
-    ],
-    EXAMPLE: [
-      "SNB-0001", "10", "Excel", "EX01", "BATCH-123", "2026-12-31",
-      "STICKER VIAL", "Kecil", "100ML", "Contoh Data"
-    ]
-  },
-
-  // Pemetaan kolom pada sheet DataPendukung
-  SUPPORT_MAP: { 
-    LOKASI_KODE: 1, 
-    LOKASI_TIPE: 2, 
-    SIZE: 4, 
-    STICKER: 6, 
-    COVER: 8 
-  }
-};
-
-// ==========================================================
-// ROUTING (DO GET) - UPDATED FOR PUTAWAY MODULE
-// ==========================================================
+// Ganti fungsi doGet(e) Anda dengan versi ini
 function doGet(e) {
   var page = e.parameter.page || 'dashboard';
   var template;
   
-  // Routing Halaman
-  if (page == 'dashboard') {
-    template = HtmlService.createTemplateFromFile('Dashboard');
-  } 
-  else if (page == 'BarangMasuk') {
-    template = HtmlService.createTemplateFromFile('BarangMasuk');
-  } 
-  else if (page == 'RiwayatMasuk') {
-    template = HtmlService.createTemplateFromFile('RiwayatMasuk');
-  } 
-  else if (page == 'BarangKeluar') {
-    template = HtmlService.createTemplateFromFile('BarangKeluar');
-  } 
-  else if (page == 'RiwayatKeluar') {
-    template = HtmlService.createTemplateFromFile('RiwayatKeluar');
-  }
-  // --- START: MODUL PUTAWAY ROUTING ---
-  else if (page == 'PutawayPartial') {
-    template = HtmlService.createTemplateFromFile('PutawayPartial');
-  }
-  else if (page == 'PutawayAll') {
-    template = HtmlService.createTemplateFromFile('PutawayAll');
-  }
-  else if (page == 'RiwayatPutaway') {
-    template = HtmlService.createTemplateFromFile('RiwayatPutaway');
-  }
-  // --- END: MODUL PUTAWAY ROUTING ---
-  else if (page == 'CetakSuratJalan') {
-    template = HtmlService.createTemplateFromFile('CetakSuratJalan');
-    template.trxId = e.parameter.id; 
-  }
-  else {
-    template = HtmlService.createTemplateFromFile('Dashboard');
-  }
-  
-  // Parameter Global untuk Template
-  template.page = page; 
-  template.scriptUrl = ScriptApp.getService().getUrl();
-  template.appName = CONFIG.APP_NAME;
-  
-  return template.evaluate()
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-    .setTitle(CONFIG.APP_NAME + " - " + page);
-}
-
-// ==========================================================
-// FUNGSI KHUSUS PRINTING & OUTBOUND
-// ==========================================================
-
-// 1. AMBIL DATA RIWAYAT KELUAR (Untuk Tabel Monitoring)
-function getOutboundHistory(start, end) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.SHEET_NAMES.OUTBOUND);
-  if(!sheet || sheet.getLastRow() < 2) return [];
-
-  const data = sheet.getRange(2, 1, sheet.getLastRow()-1, 12).getDisplayValues(); 
-  let groups = {};
-  
-  let isFilterOn = (start && start !== "" && end && end !== "");
-
-  for (let i = 0; i < data.length; i++) {
-    let r = data[i];
-    let id = r[0]; 
-    if (!id) continue;
-
-    let rawDate = String(r[1]); 
-    let dateObj = new Date(rawDate);
-    let dateStr = Utilities.formatDate(dateObj, "Asia/Jakarta", "yyyy-MM-dd");
-
-    if (isFilterOn) {
-       if (dateStr < start || dateStr > end) continue;
-    }
-
-    if (!groups[id]) {
-      groups[id] = {
-        id: id,
-        tgl: Utilities.formatDate(dateObj, "Asia/Jakarta", "dd/MM/yyyy"), 
-        docNo: r[2],    
-        customer: r[3], 
-        notes: r[11],
-        totalQty: 0,
-        itemCount: 0
-      };
-    }
-    
-    groups[id].totalQty += Number(r[7]); 
-    groups[id].itemCount += 1; 
-  }
-
-  return Object.values(groups).reverse();
-}
-
-// 2. AMBIL DATA CETAK (Untuk Surat Jalan)
-function getOutboundPrintData(trxId) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.SHEET_NAMES.OUTBOUND);
-  if (!sheet || sheet.getLastRow() < 2) return null;
-
-  const data = sheet.getDataRange().getValues();
-  // Filter baris berdasarkan ID Transaksi
-  const rows = data.filter(r => String(r[0]) === String(trxId));
-
-  if (rows.length === 0) return null;
-
-  const firstRow = rows[0];
-  
-  // Siapkan Data Header
-  const header = {
-    company: CONFIG.COMPANY_INFO, // Data Perusahaan dari Config
-    signatures: CONFIG.SIGNATURES, // Data Tanda Tangan dari Config
-    
-    trxId: firstRow[0],
-    tanggal: Utilities.formatDate(new Date(firstRow[1]), "Asia/Jakarta", "dd MMMM yyyy"),
-    docNo: firstRow[2],
-    customer: firstRow[3],
-    notes: firstRow[11] || "-"
-  };
-
-  // Siapkan Data Barang (Items)
-  const items = rows.map(r => {
-    return {
-      sku: r[4],
-      nama: r[5],
-      brand: r[6],
-      qty: r[7],
-      batch: r[8],
-      exp: r[9] ? Utilities.formatDate(new Date(r[9]), "Asia/Jakarta", "yyyy-MM-dd") : "-",
-      lokasi: r[10]
-    };
-  });
-
-  return { header: header, items: items };
-}
-
-function include(filename, params) {
-  try {
-    var template = HtmlService.createTemplateFromFile(filename);
-    if (params) { for (var key in params) { template[key] = params[key]; } }
-    return template.evaluate().getContent();
-  } catch (e) { return "Error: File " + filename + " not found."; }
-}
-
-function getAppConfig() { return CONFIG; }
-
-// --- 2. FUNGSI TRANSAKSI INBOUND (TIDAK DISENTUH) ---
-function processInboundTransaction(header, items) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sHist = _ensureSheet(CONFIG.SHEET_NAMES.INBOUND);
-  const sBatch = _ensureSheet(CONFIG.SHEET_NAMES.BATCH_PRODUCT);
-  
-  let trxId = _genId(sHist, "IN-"); // [REVISI KECIL] Parameterisasi Prefix agar fungsi _genId bisa dipakai Outbound
-
-  try {
-    items.forEach(item => {
-      sHist.appendRow([
-        trxId, header.tanggalMasuk, header.poProduk, header.poSticker, header.shipmentDate,
-        item.kodeBarang, item.namaProduk, item.brand, 
-        (item.noBatch||"-"), (item.expiredDate||"-"), (item.typeSticker||"-"), (item.sizeCover||"-"), (item.size||"-"),
-        item.qtyMasuk, item.typeLokasi, item.lokasi, (item.keterangan||"-")
-      ]);
-      _updateStock(sBatch, item);
-    });
-    SpreadsheetApp.flush();
-    return { success: true, message: "Validasi Sukses!", trxId: trxId };
-  } catch(e) {
-    return { success: false, message: "Error: " + e.message };
-  }
-}
-
-function _updateStock(sheet, item) {
-  let kode = String(item.kodeBarang).toUpperCase().trim();
-  let loc = String(item.lokasi).toUpperCase().trim();
-  let batch = String(item.noBatch || "-").toUpperCase().trim();
-  let stick = String(item.typeSticker || "-").toUpperCase().trim();
-  let cover = String(item.sizeCover || "-").toUpperCase().trim();
-  let size = String(item.size || "-").toUpperCase().trim();
-  
-  let data = sheet.getDataRange().getValues();
-  let found = false;
-
-  for(let i=1; i<data.length; i++) {
-    if (String(data[i][1]).toUpperCase() == kode &&
-        String(data[i][6]).toUpperCase() == loc &&
-        String(data[i][7]).toUpperCase() == batch &&
-        String(data[i][9]).toUpperCase() == stick &&
-        String(data[i][10]).toUpperCase() == cover &&
-        String(data[i][11]).toUpperCase() == size) {
-      
-      let newQty = Number(data[i][4]) + Number(item.qtyMasuk);
-      sheet.getRange(i+1, 5).setValue(newQty);
-      sheet.getRange(i+1, 13).setValue(new Date());
-      found = true;
+  switch(page.toLowerCase()) {
+    case 'produk':
+      template = HtmlService.createTemplateFromFile('Produk');
       break;
-    }
-  }
+    case 'barang-masuk':
+      template = HtmlService.createTemplateFromFile('BarangMasuk');
+      break;
+    case 'barang-keluar':
+      template = HtmlService.createTemplateFromFile('BarangKeluar');
+      break;
+    case 'stok-opname':
+      template = HtmlService.createTemplateFromFile('StokOpname');
+      break;
+    case 'laporan-opname':
+      template = HtmlService.createTemplateFromFile('LaporanOpname');
+      break;
+    case 'laporan-barang':
+      template = HtmlService.createTemplateFromFile('LaporanPerBarang');
+      break;
 
-  if(!found) {
-    let id = "BATCH-" + Math.floor(Math.random()*1000000);
-    sheet.appendRow([
-      id, kode, item.namaProduk, item.brand, item.qtyMasuk, 
-      item.typeLokasi, loc, batch, (item.expiredDate||"-"), 
-      stick, cover, size, new Date()
-    ]);
+    default:
+      page = 'dashboard';
+      template = HtmlService.createTemplateFromFile('Dashboard');
+      break;
+  }
+  
+  template.scriptUrl = ScriptApp.getService().getUrl();
+  template.page = page; 
+  
+  var htmlOutput = template.evaluate();
+  htmlOutput.setTitle("Aplikasi Inventory");
+  htmlOutput.setFaviconUrl("https://cdn-icons-png.flaticon.com/128/3500/3500823.png");
+
+  return htmlOutput.setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+// Fungsi untuk mendapatkan URL aplikasi
+function getAppUrl() {
+  return ScriptApp.getService().getUrl();
+}
+
+// Fungsi untuk menampilkan halaman produk
+function showProdukPage() {
+  var html = HtmlService.createHtmlOutputFromFile('Produk')
+      .setTitle('Manajemen Produk')
+      .setWidth(800)
+      .setHeight(600);
+  SpreadsheetApp.getUi().showModalDialog(html, 'Manajemen Produk');
+}
+
+// Fungsi untuk menampilkan halaman barang masuk
+function showBarangMasukPage() {
+  var html = HtmlService.createHtmlOutputFromFile('BarangMasuk')
+      .setTitle('Barang Masuk')
+      .setWidth(800)
+      .setHeight(600);
+  SpreadsheetApp.getUi().showModalDialog(html, 'Barang Masuk');
+}
+
+// Fungsi untuk menampilkan halaman barang keluar
+function showBarangKeluarPage() {
+  var html = HtmlService.createHtmlOutputFromFile('BarangKeluar')
+      .setTitle('Barang Keluar')
+      .setWidth(800)
+      .setHeight(600);
+  SpreadsheetApp.getUi().showModalDialog(html, 'Barang Keluar');
+}
+
+// FUNGSI getDataProduk 
+function getDataProduk(filterStatus = '', page = 1, pageSize = 10, searchTerm = '') {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName("DataProduk");
+    
+    if (!sheet) {
+      throw new Error("Sheet DataProduk tidak ditemukan");
+    }
+    
+    const lastRow = sheet.getLastRow();
+    
+    if (lastRow <= 1) {
+      return { data: [], currentPage: 1, totalPages: 0, totalProduk: 0 };
+    }
+    
+    // Ambil semua data terlebih dahulu
+    let allData = sheet.getRange(2, 1, lastRow - 1, 7).getValues();
+    
+    // 1. Terapkan filter PENCARIAN terlebih dahulu
+    if (searchTerm) {
+      const lowerCaseSearchTerm = searchTerm.toLowerCase();
+      allData = allData.filter(row => {
+        // Cari di Kode Barang (indeks 0) atau Nama Barang (indeks 1)
+        const kodeBarang = String(row[0] || '').toLowerCase();
+        const namaBarang = String(row[1] || '').toLowerCase();
+        return kodeBarang.includes(lowerCaseSearchTerm) || namaBarang.includes(lowerCaseSearchTerm);
+      });
+    }
+
+    // 2. Terapkan filter STATUS setelah pencarian
+    if (filterStatus) {
+      allData = allData.filter(row => row[5] === filterStatus);
+    }
+    
+    const totalProduk = allData.length;
+    const totalPages = Math.ceil(totalProduk / pageSize) || 1;
+    
+    // 3. Lakukan paginasi pada data yang sudah difilter
+    const startIndex = (page - 1) * pageSize;
+    const pagedData = allData.slice(startIndex, startIndex + pageSize);
+    
+    return { 
+      data: pagedData,
+      currentPage: Number(page),
+      totalPages: totalPages,
+      totalProduk: totalProduk
+    };
+    
+  } catch (error) {
+    console.error('Error in getDataProduk:', error);
+    return { error: error.message };
   }
 }
 
-// --- 3. BACA HISTORY INBOUND (TIDAK DISENTUH) ---
-function getInboundHistory(start, end) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.SHEET_NAMES.INBOUND);
-  if(!sheet || sheet.getLastRow() < 2) return [];
-
-  const data = sheet.getRange(2,1,sheet.getLastRow()-1, 17).getDisplayValues(); 
-  let groups = {};
-  let isFilterOn = (start && start !== "" && end && end !== "");
+// Fungsi untuk menambahkan produk baru
+function addProduk(kode, nama, jenis, satuan, stokMinimal) {
+  var stok = 0;
+  var reorderStatus = stok <= stokMinimal ? "Barang Kosong" : "Tersedia";
   
-  for (let i = 0; i < data.length; i++) {
-    let r = data[i];
-    let id = r[0]; 
-    if (!id) continue;
+  produkSheet.appendRow([kode, nama, jenis, satuan, stokMinimal, reorderStatus, stok]);
+  return "Produk berhasil ditambahkan";
+}
 
-    let rawDate = String(r[1]).trim();
-    let dateForFilter = rawDate;
-    if (rawDate.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
-       let parts = rawDate.split('/');
-       dateForFilter = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+// Fungsi untuk mencatat barang masuk
+function addBarangMasuk(tglMasuk, kodeBarang, jumlah, gudang) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const produkSheet = ss.getSheetByName("DataProduk");
+    const masukSheet = ss.getSheetByName("ProdukMasuk");
+    
+    // Debug: Log parameter yang diterima
+    console.log(`Mencari kode: ${kodeBarang} | Tipe: ${typeof kodeBarang}`);
+    
+    // Cari data produk dengan case insensitive dan trim whitespace
+    const produkData = produkSheet.getDataRange().getValues();
+    let produk = null;
+    let produkRow = 0;
+    
+    for (let i = 1; i < produkData.length; i++) {
+      const currentKode = produkData[i][0] ? produkData[i][0].toString().trim() : '';
+      const searchKode = kodeBarang.toString().trim();
+      
+      // Debug: Log perbandingan kode
+      console.log(`Membandingkan: '${currentKode}' dengan '${searchKode}'`);
+      
+      if (currentKode.toLowerCase() === searchKode.toLowerCase()) {
+        produk = produkData[i];
+        produkRow = i + 1;
+        break;
+      }
+    }
+    
+    if (!produk) {
+      // Debug: Log semua kode yang ada untuk troubleshooting
+      const allKodes = produkData.slice(1).map(row => row[0] ? row[0].toString().trim() : 'NULL');
+      console.log('Semua kode yang ada:', allKodes);
+      throw new Error(`Kode '${kodeBarang}' tidak ditemukan dalam database`);
+    }
+    
+    // Debug: Log data produk yang ditemukan
+    console.log('Produk ditemukan:', produk);
+    
+    // Tambahkan ke sheet ProdukMasuk
+    masukSheet.appendRow([
+      tglMasuk, 
+      produk[0], // Gunakan kode dari data produk
+      produk[1], // Nama Barang
+      produk[2], // Jenis Barang
+      produk[3], // Satuan
+      jumlah, 
+      gudang
+    ]);
+    
+    // Update stok
+    const newStok = Number(produk[6]) + Number(jumlah);
+    produkSheet.getRange(produkRow, 7).setValue(newStok);
+    
+    // Update reorder status
+    const newStatus = newStok <= produk[4] ? "Barang Kosong" : "Tersedia";
+    produkSheet.getRange(produkRow, 6).setValue(newStatus);
+    
+    return {
+      success: true,
+      message: `Barang ${produk[1]} berhasil dicatat masuk ke ${gudang}`
+    };
+    
+  } catch (error) {
+    console.error('Error:', error);
+    return {
+      success: false,
+      message: error.message
+    };
+  }
+}
+
+function addBarangKeluar(tglKeluar, kodeBarang, jumlah, gudang, penanggungJawab) {
+  try {
+    var produkData = produkSheet.getDataRange().getValues();
+    
+    var produk = produkData.find(function(row) {
+      return row[0] && row[0].toString().trim().toLowerCase() === kodeBarang.toString().trim().toLowerCase();
+    });
+    
+    if (!produk) {
+      return { success: false, message: "Kode barang tidak ditemukan di master data." };
+    }
+    
+    const stokSaatIni = produk[6];
+    
+    if (Number(stokSaatIni) < Number(jumlah)) {
+      return { success: false, message: `Stok tidak mencukupi. Stok saat ini hanya ada ${stokSaatIni}.` };
+    }
+    
+    keluarSheet.appendRow([tglKeluar, kodeBarang, produk[1], produk[2], produk[3], gudang, penanggungJawab, jumlah]);
+    
+    var rowIndex = produkData.findIndex(function(row) {
+      return row[0] && row[0].toString().trim().toLowerCase() === kodeBarang.toString().trim().toLowerCase();
+    }) + 1;
+    
+    if (rowIndex === 0) throw new Error("Gagal menemukan indeks produk untuk diupdate.");
+
+    var newStok = stokSaatIni - jumlah;
+    produkSheet.getRange(rowIndex, 7).setValue(newStok);
+    
+    var stokMinimal = produk[4];
+    var newStatus = newStok <= stokMinimal ? "Barang Kosong" : "Tersedia";
+    produkSheet.getRange(rowIndex, 6).setValue(newStatus);
+    
+    return { success: true, message: "Barang keluar berhasil dicatat." };
+
+  } catch (e) {
+    console.error("Error di addBarangKeluar:", e);
+    throw new Error("Terjadi kesalahan di server: " + e.message);
+  }
+}
+
+function getDashboardData() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const produkSheet = ss.getSheetByName("DataProduk");
+    const masukSheet = ss.getSheetByName("ProdukMasuk");
+    const keluarSheet = ss.getSheetByName("ProdukKeluar");
+    
+    // Validasi sheet
+    if (!produkSheet || !masukSheet || !keluarSheet) {
+      throw new Error("Sheet tidak ditemukan. Pastikan sheet 'DataProduk', 'ProdukMasuk', dan 'ProdukKeluar' ada.");
     }
 
-    let pass = true;
-    if (isFilterOn) {
-        if (dateForFilter.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            if (dateForFilter < start || dateForFilter > end) pass = false;
+    const userEmail = Session.getActiveUser().getEmail();
+    const jam = new Date().getHours();
+    let sapaan = "";
+    if (jam >= 4 && jam < 11) {
+      sapaan = "Selamat Pagi";
+    } else if (jam >= 11 && jam < 15) {
+      sapaan = "Selamat Siang";
+    } else if (jam >= 15 && jam < 18) {
+      sapaan = "Selamat Sore";
+    } else {
+      sapaan = "Selamat Malam";
+    }
+
+
+    // Hitung total data (handle kasus sheet kosong)
+    const totalProduk = produkSheet.getLastRow() > 1 ? produkSheet.getLastRow() - 1 : 0;
+    const totalMasuk = masukSheet.getLastRow() > 1 ? masukSheet.getLastRow() - 1 : 0;
+    const totalKeluar = keluarSheet.getLastRow() > 1 ? keluarSheet.getLastRow() - 1 : 0;
+
+    // Data untuk chart transaksi 6 bulan terakhir
+    const now = new Date();
+    const chartLabels = [];
+    const chartMasukData = [];
+    const chartKeluarData = [];
+    
+    // Default values untuk 6 bulan terakhir
+    for (let i = 5; i >= 0; i--) {
+      const targetMonth = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      chartLabels.push(Utilities.formatDate(targetMonth, Session.getScriptTimeZone(), "MMM yyyy"));
+      chartMasukData.push(0);
+      chartKeluarData.push(0);
+    }
+
+    // Isi data aktual jika ada
+    if (masukSheet.getLastRow() > 1 && keluarSheet.getLastRow() > 1) {
+      const dataMasuk = masukSheet.getRange("A2:A" + masukSheet.getLastRow()).getValues().flat();
+      const dataKeluar = keluarSheet.getRange("A2:A" + keluarSheet.getLastRow()).getValues().flat();
+      
+      for (let i = 5; i >= 0; i--) {
+        const targetMonth = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const nextMonth = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 1);
+        
+        chartMasukData[5-i] = dataMasuk.filter(date => 
+          date instanceof Date && date >= targetMonth && date < nextMonth
+        ).length;
+        
+        chartKeluarData[5-i] = dataKeluar.filter(date => 
+          date instanceof Date && date >= targetMonth && date < nextMonth
+        ).length;
+      }
+    }
+
+    // Data untuk chart harian bulan ini
+    const dailyData = { labels: [], masuk: [], keluar: [] };
+    const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const daysInMonth = (nextMonth - currentMonth) / (1000 * 60 * 60 * 24);
+    
+    // Siapkan array untuk setiap hari
+    for (let day = 1; day <= daysInMonth; day++) {
+      dailyData.labels.push(day.toString());
+      dailyData.masuk.push(0);
+      dailyData.keluar.push(0);
+    }
+    
+    // Isi data aktual transaksi masuk harian
+    if (masukSheet.getLastRow() > 1) {
+      const dataMasuk = masukSheet.getRange("A2:A" + masukSheet.getLastRow()).getValues().flat();
+      dataMasuk.forEach(date => {
+        if (date instanceof Date && date >= currentMonth && date < nextMonth) {
+          const day = date.getDate();
+          dailyData.masuk[day-1]++;
         }
+      });
+    }
+    
+    // Isi data aktual transaksi keluar harian
+    if (keluarSheet.getLastRow() > 1) {
+      const dataKeluar = keluarSheet.getRange("A2:A" + keluarSheet.getLastRow()).getValues().flat();
+      dataKeluar.forEach(date => {
+        if (date instanceof Date && date >= currentMonth && date < nextMonth) {
+          const day = date.getDate();
+          dailyData.keluar[day-1]++;
+        }
+      });
     }
 
-    if (pass) {
-      if (!groups[id]) {
-        groups[id] = {
-          id: id, tgl: rawDate, poProduk: r[2], poSticker: r[3], shipment: r[4],
-          user: "Admin", totalQty: 0, items: []
+    // Data untuk chart gudang
+    const gudangList = ["Gudang 1", "Gudang 2", "Gudang 3"];
+    const gudangData = gudangList.map(() => 0);
+    
+    if (masukSheet.getLastRow() > 1) {
+      const dataGudang = masukSheet.getRange("F2:G" + masukSheet.getLastRow()).getValues();
+      dataGudang.forEach(row => {
+        const jumlah = Number(row[0]) || 0;
+        const gudang = row[1];
+        const index = gudangList.indexOf(gudang);
+        if (index !== -1) {
+          gudangData[index] += jumlah;
+        }
+      });
+    }
+
+    // Data transaksi terakhir (10 terbaru)
+    const lastTransactions = [];
+    
+    // Format tanggal untuk response
+    const timeZone = ss.getSpreadsheetTimeZone();
+    const formatDate = (date) => date instanceof Date ? 
+      Utilities.formatDate(date, timeZone, "yyyy-MM-dd") : "";
+
+    // Gabungkan transaksi masuk dan keluar
+    if (masukSheet.getLastRow() > 1) {
+      const lastMasuk = masukSheet.getRange(
+        Math.max(2, masukSheet.getLastRow() - 9), 1, Math.min(10, masukSheet.getLastRow() - 1), 7
+      ).getValues();
+      
+      lastMasuk.forEach(row => {
+        lastTransactions.push({
+          tanggal: formatDate(row[0]),
+          tipe: 'Masuk',
+          kodeBarang: row[1] || '',
+          namaBarang: row[2] || '',
+          jumlah: row[5] || 0,
+          gudang: row[6] || ''
+        });
+      });
+    }
+    
+    if (keluarSheet.getLastRow() > 1) {
+      const lastKeluar = keluarSheet.getRange(
+        Math.max(2, keluarSheet.getLastRow() - 9), 1, Math.min(10, keluarSheet.getLastRow() - 1), 8
+      ).getValues();
+      
+      lastKeluar.forEach(row => {
+        lastTransactions.push({
+          tanggal: formatDate(row[0]),
+          tipe: 'Keluar',
+          kodeBarang: row[1] || '',
+          namaBarang: row[2] || '',
+          jumlah: row[7] || 0,
+          gudang: row[5] || ''
+        });
+      });
+    }
+    
+    // Urutkan berdasarkan tanggal (terbaru pertama)
+    lastTransactions.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+
+    return {
+      success: true,
+      data: {
+        totalProduk: totalProduk,
+        totalMasuk: totalMasuk,
+        totalKeluar: totalKeluar,
+        chartLabels: chartLabels,
+        chartMasukData: chartMasukData,
+        chartKeluarData: chartKeluarData,
+        dailyChartData: dailyData,
+        gudangLabels: gudangList,
+        gudangData: gudangData,
+        lastTransactions: lastTransactions.slice(0, 10),
+        greeting: sapaan,
+        userEmail: userEmail
+      }
+    };
+
+  } catch (e) {
+    console.error('Error in getDashboardData:', e);
+    return {
+      success: false,
+      error: e.message
+    };
+  }
+}
+
+function getGudangList() {
+  return ["Gudang 1", "Gudang 2", "Gudang 3"];
+}
+
+// Fungsi untuk export data ke Excel
+function exportToExcel(sheetName) {
+  var sheet = ss.getSheetByName(sheetName);
+  var data = sheet.getDataRange().getValues();
+  
+  // Buat file CSV
+  var csv = data.map(row => row.join(",")).join("\n");
+  
+  // Buat blob
+  var blob = Utilities.newBlob(csv, MimeType.CSV, sheetName + ".csv");
+  
+  return {
+    url: "data:text/csv;charset=utf-8," + encodeURIComponent(csv),
+    filename: sheetName + ".csv"
+  };
+}
+
+function getGudangList() {
+  return ["Gudang 1", "Gudang 2", "Gudang 3"];
+}
+
+// Fungsi barang masuk
+function getDataBarangMasuk(filterGudang = '', page = 1, pageSize = 10, searchTerm = '') {
+  try {
+    const sheet = ss.getSheetByName("ProdukMasuk");
+    if (!sheet) {
+      throw new Error("Sheet ProdukMasuk tidak ditemukan");
+    }
+    
+    const lastRow = sheet.getLastRow();
+    if (lastRow <= 1) {
+      return { data: [], currentPage: 1, totalPages: 0, totalData: 0 };
+    }
+    
+    const spreadsheetTimezone = ss.getSpreadsheetTimeZone();
+    const rawData = sheet.getRange(2, 1, lastRow - 1, 7).getValues();
+
+    // **PERBAIKAN UTAMA: Simpan nomor baris asli SEBELUM filtering**
+    // Kita buat array baru yang isinya [data_baris, nomor_baris_asli]
+    let allData = rawData.map((row, index) => {
+      return { data: row, originalIndex: index + 2 }; // index + 2 karena data mulai dari baris 2
+    });
+
+    // 1. Terapkan filter PENCARIAN terlebih dahulu
+    if (searchTerm) {
+      const lowerCaseSearchTerm = searchTerm.toLowerCase();
+      allData = allData.filter(item => { // filter pada object 'item'
+        const row = item.data; // ambil data barisnya
+        const kodeBarang = String(row[1] || '').toLowerCase(); // Kolom B: Kode Barang
+        const namaBarang = String(row[2] || '').toLowerCase(); // Kolom C: Nama Barang
+        return kodeBarang.includes(lowerCaseSearchTerm) || namaBarang.includes(lowerCaseSearchTerm);
+      });
+    }
+
+    // 2. Terapkan filter GUDANG setelahnya
+    if (filterGudang) {
+      allData = allData.filter(item => item.data[6] === filterGudang); // Kolom G: Gudang
+    }
+    
+    const totalData = allData.length;
+    const totalPages = Math.ceil(totalData / pageSize) || 1;
+    
+    // 3. Lakukan paginasi pada data final
+    const startIndex = (page - 1) * pageSize;
+    const pagedDataObjects = allData.slice(startIndex, startIndex + pageSize);
+
+    // 4. Format data untuk dikirim ke client
+    // Ambil data baris dan tambahkan nomor baris asli di akhir
+    const pagedData = pagedDataObjects.map(item => {
+      const row = item.data;
+      if (row[0] && row[0] instanceof Date) {
+        row[0] = Utilities.formatDate(row[0], spreadsheetTimezone, "yyyy-MM-dd");
+      }
+      row.push(item.originalIndex); // Tambahkan nomor baris asli ke akhir array
+      return row;
+    });
+
+    return { 
+      data: pagedData,
+      currentPage: Number(page),
+      totalPages: totalPages,
+      totalData: totalData
+    };
+  } catch (error) {
+    console.error('Error in getDataBarangMasuk:', error.message);
+    throw new Error(error.message);
+  }
+}
+
+
+
+function updateBarangMasuk(rowIndex, newData) {
+  try {
+    const masukSheet = ss.getSheetByName("ProdukMasuk");
+    const produkSheet = ss.getSheetByName("DataProduk");
+
+    // 1. Ambil data lama dari baris yang akan diedit
+    const dataLama = masukSheet.getRange(rowIndex, 1, 1, 7).getValues()[0];
+    const kodeBarang = dataLama[1];
+    const jumlahLama = Number(dataLama[5]);
+    const jumlahBaru = Number(newData.jumlah);
+
+    // 2. Hitung selisih untuk koreksi stok
+    const selisih = jumlahBaru - jumlahLama;
+
+    // 3. Update baris di sheet 'ProdukMasuk'
+    masukSheet.getRange(rowIndex, 1).setValue(newData.tglMasuk);
+    masukSheet.getRange(rowIndex, 6).setValue(newData.jumlah);
+    masukSheet.getRange(rowIndex, 7).setValue(newData.gudang);
+
+    // 4. Update stok di sheet 'DataProduk'
+    const dataProduk = produkSheet.getDataRange().getValues();
+    let barisProdukUntukUpdate = -1;
+    for (let i = 1; i < dataProduk.length; i++) {
+      if (dataProduk[i][0] === kodeBarang) {
+        barisProdukUntukUpdate = i + 1;
+        break;
+      }
+    }
+
+    if (barisProdukUntukUpdate === -1) {
+      throw new Error("Produk terkait tidak ditemukan di database.");
+    }
+    
+    const stokSaatIni = produkSheet.getRange(barisProdukUntukUpdate, 7).getValue();
+    const stokTerkoreksi = stokSaatIni + selisih;
+    produkSheet.getRange(barisProdukUntukUpdate, 7).setValue(stokTerkoreksi);
+    
+    // 5. Update status produk
+    const stokMinimal = produkSheet.getRange(barisProdukUntukUpdate, 5).getValue();
+    const statusBaru = stokTerkoreksi <= stokMinimal ? "Barang Kosong" : "Tersedia";
+    produkSheet.getRange(barisProdukUntukUpdate, 6).setValue(statusBaru);
+
+    return "Data barang masuk berhasil diperbarui.";
+
+  } catch (error) {
+    console.error("Gagal update barang masuk:", error);
+    throw new Error(error.message);
+  }
+}
+
+function getProdukByBarcode(kodeBarang) {
+  try {
+    const sheet = ss.getSheetByName("DataProduk");
+    const data = sheet.getDataRange().getValues();
+    
+    // Normalisasi kodeBarang untuk pencarian case-insensitive
+    const kodeDicari = kodeBarang.toString().trim().toLowerCase();
+    
+    for (let i = 1; i < data.length; i++) {
+      // Periksa apakah kolom kode barang ada dan cocok
+      if (data[i][0] && data[i][0].toString().trim().toLowerCase() === kodeDicari) {
+        return {
+          kode: data[i][0] || '',
+          nama: data[i][1] || '',
+          jenis: data[i][2] || '',
+          satuan: data[i][3] || '',
+          stokMinimal: Number(data[i][4]) || 0,
+          stok: Number(data[i][6]) || 0
         };
       }
-      groups[id].items.push({
-        kode: r[5], nama: r[6], brand: r[7], batch: r[8], exp: r[9],
-        typeSticker: r[10], sizeCover: r[11], size: r[12],
-        qty: Number(r[13]), typeLoc: r[14], lokasi: r[15], notes: r[16] || "-" 
-      });
-      groups[id].totalQty += Number(r[13]);
     }
+    return null;
+  } catch (error) {
+    console.error('Error in getProdukByBarcode:', error);
+    throw new Error('Gagal memproses pencarian produk: ' + error.message);
   }
-  return Object.values(groups).reverse();
 }
 
-// --- 4. DATA PENDUKUNG & HELPER (DIREVISI BAGIAN UPDATE/DELETE) ---
-function getBatchStockList(filterType) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.SHEET_NAMES.BATCH_PRODUCT);
-  if (!sheet || sheet.getLastRow() < 2) return [];
-  const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, CONFIG.HEADERS.BATCH).getDisplayValues();
-  let stockList = [];
-  for (let i = 0; i < data.length; i++) {
-    let r = data[i]; if (!r[1]) continue; 
-    let item = {
-      idBatch: r[0], kode: r[1], nama: r[2], brand: r[3], qty: Number(r[4]) || 0,
-      typeLoc: r[5], lokasi: r[6], batch: r[7], exp: r[8], sticker: r[9], cover: r[10], size: r[11], lastUpdate: r[12]
-    };
-    if (filterType === 'positive' && item.qty <= 0) continue;
-    if (filterType === 'zero' && item.qty > 0) continue;
-    stockList.push(item);
-  }
-  return stockList;
-}
-
-function _ensureSheet(name) {
-  let s = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
-  if(!s) s = SpreadsheetApp.getActiveSpreadsheet().insertSheet(name); return s;
-}
-
-// [REVISI] Menambahkan parameter prefix agar bisa dipakai untuk IN- dan OUT-
-function _genId(sheet, prefix) {
-  let pre = (prefix || "IN-") + Utilities.formatDate(new Date(), "Asia/Jakarta", "yyMMdd") + "-";
-  return pre + (sheet.getLastRow() < 2 ? "001" : String(sheet.getLastRow()).padStart(3,'0'));
-}
-
-function getMasterData() {
-  const s = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("MasterProduk");
-  return (s && s.getLastRow() > 1) ? s.getRange(2, 1, s.getLastRow()-1, 4).getValues() : [];
-}
-
-function getSupportingData() {
-  const s = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("DataPendukung");
-  if(!s || s.getLastRow() < 2) return {lokasi:[], size:[], typeSticker:[], sizeCover:[]};
-  const d = s.getRange(2, 1, s.getLastRow()-1, 9).getValues();
-  let res = {lokasi:[], size:[], typeSticker:[], sizeCover:[]};
-  d.forEach(r => {
-    if(r[0]) res.lokasi.push(r[1] ? r[0]+" - "+r[1] : r[0]);
-    if(r[3]) res.size.push(r[3]);
-    if(r[5]) res.typeSticker.push(r[5]);
-    if(r[7]) res.sizeCover.push(r[7]);
-  });
-  return res;
-}
-
-function addSupportItem(cat, v1, v2) {
-  const s = _ensureSheet("DataPendukung");
-  let col = (cat=='lokasi')?1 : (cat=='size')?4 : (cat=='typeSticker')?6 : 8;
-  let r = s.getLastRow()+1; s.getRange(r, col).setValue(v1);
-  if(v2) s.getRange(r, col+1).setValue(v2); return {success:true};
-}
-
-// [REVISI] Mengisi logika update yang sebelumnya kosong
-function updateSupportItem(cat, oldV, newV, newT) {
-  const s = _ensureSheet("DataPendukung");
-  let col = (cat=='lokasi')?1 : (cat=='size')?4 : (cat=='typeSticker')?6 : 8;
-  const data = s.getDataRange().getValues();
-  // Parsing oldV jika kategori lokasi (format "Kode - Tipe")
-  let searchVal = (cat == 'lokasi' && oldV.includes(" - ")) ? oldV.split(" - ")[0] : oldV;
+function hapusProduk(kodeBarang) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("DataProduk");
+  const data = sheet.getDataRange().getValues();
   
-  for(let i=0; i<data.length; i++) {
-    if(String(data[i][col-1]) == String(searchVal)) {
-      s.getRange(i+1, col).setValue(newV);
-      if(cat == 'lokasi' && newT) s.getRange(i+1, col+1).setValue(newT);
-      return {success:true};
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === kodeBarang) {
+      sheet.deleteRow(i + 1);
+      return "Produk berhasil dihapus";
     }
   }
-  return {success:false, message:"Data tidak ditemukan."};
+  
+  throw new Error("Produk tidak ditemukan");
 }
 
-// [REVISI] Menggunakan deleteRow agar tidak ada baris kosong
-function deleteSupportItem(cat, val) {
-  const s = _ensureSheet("DataPendukung");
-  let col = (cat=='lokasi')?1 : (cat=='size')?4 : (cat=='typeSticker')?6 : 8;
-  let d = s.getDataRange().getValues(); 
-  let search = (cat=='lokasi') ? val.split(" - ")[0] : val;
-  for(let i=0; i<d.length; i++) { 
-    if(String(d[i][col-1]) == String(search)) { 
-      s.deleteRow(i+1); // Pakai deleteRow, bukan clearContent
-      return {success:true};
-    } 
-  }
-  return {success:false};
-}
+function updateProduk(kode, nama, jenis, satuan, stokMinimal) {
+  try {
+    // Variabel produkSheet sudah didefinisikan di atas file Anda
+    if (!produkSheet) {
+      throw new Error("Sheet DataProduk tidak ditemukan.");
+    }
 
-function addMasterData(form) {
-  const s = _ensureSheet("MasterProduk"); s.appendRow([getNextId(), form.nama, form.brand, form.notes]); return {success:true};
-}
+    const data = produkSheet.getDataRange().getValues();
+    let rowIndex = -1;
 
-function updateMasterData(form) {
-  const s = _ensureSheet("MasterProduk"); const d = s.getDataRange().getValues();
-  for(let i=1; i<d.length; i++) { if(String(d[i][0]) == form.kode) { s.getRange(i+1, 2).setValue(form.nama); s.getRange(i+1, 3).setValue(form.brand); s.getRange(i+1, 4).setValue(form.notes); return {success:true}; } }
-}
-
-function deleteMasterData(kode) {
-  const s = _ensureSheet("MasterProduk"); const d = s.getDataRange().getValues();
-  for(let i=1; i<d.length; i++) { if(String(d[i][0]) == kode) { s.deleteRow(i+1); return {success:true}; } }
-}
-
-function getNextId() {
-  const s = _ensureSheet("MasterProduk"); if(s.getLastRow()<2) return "SNB-0001";
-  const last = s.getRange(s.getLastRow(), 1).getValue(); const num = parseInt(last.split("-")[1]) + 1;
-  return "SNB-" + String(num).padStart(4,'0');
-}
-
-function deleteInboundTransaction(id) {
-  const s = _ensureSheet("StokMasuk"); const d = s.getDataRange().getValues(); let deleted = false;
-  for(let i=d.length-1; i>=1; i--) { if(String(d[i][0]) == id) { s.deleteRow(i+1); deleted = true; } }
-  if(deleted) return {success:true, message:"Transaksi Dihapus"}; return {success:false, message:"ID Tidak Ditemukan"};
-}
-
-// ==========================================================
-// --- 5. FUNGSI BARU: OUTBOUND (BARANG KELUAR) ---
-// ==========================================================
-
-// [BARU] Mengambil stok tersedia untuk picking, diurutkan Expired (FEFO)
-function getAvailableStockForPicking(sku) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.SHEET_NAMES.BATCH_PRODUCT);
-  if (!sheet || sheet.getLastRow() < 2) return [];
-
-  const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, CONFIG.HEADERS.BATCH).getDisplayValues();
-  let availableList = [];
-  sku = String(sku).toUpperCase().trim();
-
-  for (let i = 0; i < data.length; i++) {
-    let r = data[i];
-    // Index: 1=Kode, 4=Qty, 5=TypeLoc, 6=Loc, 7=Batch, 8=Exp, 9=Sticker, 10=Cover, 11=Size
-    if (String(r[1]).toUpperCase().trim() === sku) {
-      let qty = Number(r[4]);
-      if (qty > 0) { 
-        availableList.push({
-          batch: r[7], lokasi: r[6], typeLoc: r[5], exp: r[8],
-          qty: qty, sticker: r[9], cover: r[10], size: r[11]
-        });
+    // Cari baris produk berdasarkan kode (mulai dari i=1 untuk lewati header)
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0] && data[i][0].toString().trim() === kode.toString().trim()) {
+        rowIndex = i + 1; // getValues() berbasis 0, baris sheet berbasis 1
+        break;
       }
     }
-  }
-  // Sort FEFO (Expired duluan di atas)
-  return availableList.sort((a, b) => {
-     if (!a.exp || a.exp === '-') return 1;
-     if (!b.exp || b.exp === '-') return -1;
-     return new Date(a.exp) - new Date(b.exp);
-  });
-}
 
-// [BARU] Memproses transaksi keluar: Simpan Log & Kurangi Stok
-function processOutboundTransaction(header, cart) {
-  const sOut = _ensureSheet(CONFIG.SHEET_NAMES.OUTBOUND);
-  const sBatch = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.SHEET_NAMES.BATCH_PRODUCT);
-  
-  let trxId = _genId(sOut, "OUT-"); // Generate ID Outbound
+    if (rowIndex === -1) {
+      throw new Error("Produk dengan kode " + kode + " tidak ditemukan untuk diperbarui.");
+    }
 
-  try {
-    let batchData = sBatch.getDataRange().getValues();
-    
-    cart.forEach(item => {
-      item.pickDetails.forEach(pick => {
-         // 1. Update Stok (Deduksi) di BatchProduct
-         for(let i=1; i<batchData.length; i++) {
-            let row = batchData[i];
-            if(String(row[1]) == item.sku && String(row[6]) == pick.lokasi && String(row[7]) == pick.batch) {
-               let newQty = Number(row[4]) - Number(pick.qty);
-               if(newQty < 0) newQty = 0;
-               sBatch.getRange(i+1, 5).setValue(newQty);
-               sBatch.getRange(i+1, 13).setValue(new Date()); // Last Update
-               break; 
-            }
-         }
-         // 2. Simpan Log ke StokKeluar
-         sOut.appendRow([
-            trxId, header.tanggal, header.docNo, header.customer,
-            item.sku, item.nama, item.brand,
-            pick.qty, pick.batch, pick.exp, pick.lokasi,
-            header.notes
-         ]);
-      });
-    });
-    SpreadsheetApp.flush();
-    return { success: true, message: "Outbound Berhasil Disimpan!", trxId: trxId };
+    // Lakukan pembaruan pada kolom yang sesuai
+    produkSheet.getRange(rowIndex, 2).setValue(nama);        // Kolom B: Nama Barang
+    produkSheet.getRange(rowIndex, 3).setValue(jenis);       // Kolom C: Jenis Barang
+    produkSheet.getRange(rowIndex, 4).setValue(satuan);      // Kolom D: Satuan
+    produkSheet.getRange(rowIndex, 5).setValue(stokMinimal); // Kolom E: Stok Minimal
+
+    // Perbarui juga status berdasarkan stok saat ini
+    const stokSaatIni = produkSheet.getRange(rowIndex, 7).getValue();
+    const newStatus = stokSaatIni <= stokMinimal ? "Barang Kosong" : "Tersedia";
+    produkSheet.getRange(rowIndex, 6).setValue(newStatus);   // Kolom F: Status
+
+    return "Produk berhasil diperbarui.";
+
   } catch (e) {
-    return { success: false, message: "Error: " + e.message };
+    console.error("Gagal update produk: " + e.toString());
+    // Mengembalikan pesan error agar bisa ditampilkan di sisi klien
+    throw new Error("Gagal memperbarui produk: " + e.message);
   }
 }
 
+function hapusBarangMasuk(rowIndex) {
+  try {
+    const masukSheet = ss.getSheetByName("ProdukMasuk");
+    const produkSheet = ss.getSheetByName("DataProduk");
 
-// ==========================================================
-// MODUL PUTAWAY - FINAL (BATCH & LOCATION MOVE)
-// ==========================================================
+    // 1. Ambil data dari baris yang akan dihapus untuk mendapatkan jumlah & kode barang
+    const dataDihapus = masukSheet.getRange(rowIndex, 1, 1, 7).getValues()[0];
+    const kodeBarang = dataDihapus[1];
+    const jumlahDihapus = Number(dataDihapus[5]);
 
-// 1. CARI SATU KOTAK (Untuk Partial Move)
-function getBatchDetailsForPutaway(searchId) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.SHEET_NAMES.BATCH_PRODUCT);
-  if (!sheet || sheet.getLastRow() < 2) return null;
-  
-  const search = String(searchId).toUpperCase().trim();
-  const BM = CONFIG.BATCH_MAP;
-  
-  // Cari ID Batch di Kolom A
-  const finder = sheet.getRange("A:A").createTextFinder(search).matchCase(false).matchEntireCell(true).findNext();
-  
-  if (finder) {
-    const rowIndex = finder.getRow();
-    const rowData = sheet.getRange(rowIndex, 1, 1, CONFIG.HEADERS.BATCH).getValues()[0];
+    if (!kodeBarang || isNaN(jumlahDihapus)) {
+      throw new Error("Data pada baris yang akan dihapus tidak valid atau tidak lengkap.");
+    }
+
+    // 2. Hapus baris transaksi dari sheet "ProdukMasuk"
+    masukSheet.deleteRow(rowIndex);
+
+    // 3. Cari produk di "DataProduk" untuk mengoreksi stok
+    const dataProduk = produkSheet.getDataRange().getValues();
+    let barisProdukUpdate = -1;
+    for (let i = 1; i < dataProduk.length; i++) {
+      if (dataProduk[i][0] === kodeBarang) {
+        barisProdukUpdate = i + 1;
+        break;
+      }
+    }
+
+    if (barisProdukUpdate === -1) {
+      // Jika produknya tidak ada di master, setidaknya log transaksinya sudah terhapus.
+      throw new Error(`Transaksi masuk telah dihapus, tetapi produk dengan kode ${kodeBarang} tidak ditemukan di master data untuk penyesuaian stok.`);
+    }
+
+    // 4. Koreksi stok (dikurangi)
+    const stokSaatIni = produkSheet.getRange(barisProdukUpdate, 7).getValue();
+    const stokBaru = stokSaatIni - jumlahDihapus;
+    produkSheet.getRange(barisProdukUpdate, 7).setValue(stokBaru);
+
+    // 5. Perbarui status jika perlu
+    const stokMinimal = produkSheet.getRange(barisProdukUpdate, 5).getValue();
+    const statusBaru = stokBaru <= stokMinimal ? "Barang Kosong" : "Tersedia";
+    produkSheet.getRange(barisProdukUpdate, 6).setValue(statusBaru);
+
+    return "Data barang masuk berhasil dihapus dan stok telah dikoreksi.";
     
-    return {
-      idBatch: rowData[BM.ID], kode: rowData[BM.KODE], nama: rowData[BM.NAMA],
-      qty: Number(rowData[BM.QTY]), lokasi: rowData[BM.LOKASI], batch: rowData[BM.BATCH]
-    };
+  } catch (e) {
+    console.error("Gagal hapus barang masuk:", e);
+    throw new Error("Terjadi kesalahan di server: " + e.message);
   }
-  return null;
 }
 
-// 2. CARI SEMUA ISI RAK (Untuk Move All Lokasi) - BARU!
-function getItemsAtLocation(locationName) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.SHEET_NAMES.BATCH_PRODUCT);
-  if (!sheet || sheet.getLastRow() < 2) return null;
-  
-  const search = String(locationName).toUpperCase().trim();
-  const BM = CONFIG.BATCH_MAP;
-  const data = sheet.getDataRange().getValues();
-  let itemsFound = [];
-  
-  // Mencari semua barang yang punya alamat rak yang sama
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][BM.LOKASI]).toUpperCase().trim() === search) {
-      itemsFound.push({
-        rowIndex: i + 1, idBatch: data[i][BM.ID],
-        nama: data[i][BM.NAMA], qty: Number(data[i][BM.QTY])
+
+
+// Fungsi barang keluar
+// Fungsi barang keluar
+function getDataBarangKeluar(filterGudang = '', page = 1, pageSize = 10, searchTerm = '') {
+  try {
+    const sheet = ss.getSheetByName("ProdukKeluar");
+    if (!sheet) {
+      throw new Error("Sheet ProdukKeluar tidak ditemukan");
+    }
+
+    const lastRow = sheet.getLastRow();
+    if (lastRow <= 1) {
+      return { data: [], currentPage: 1, totalPages: 0, totalData: 0 };
+    }
+
+    const spreadsheetTimezone = ss.getSpreadsheetTimeZone();
+    const rawData = sheet.getRange(2, 1, lastRow - 1, 8).getValues();
+
+    // **PERBAIKAN UTAMA: Simpan nomor baris asli SEBELUM filtering**
+    // Buat array baru yang berisi objek dengan data baris dan nomor baris aslinya
+    let allData = rawData.map((row, index) => {
+      return { data: row, originalIndex: index + 2 }; // index + 2 karena data mulai dari baris 2
+    });
+
+    // 1. Terapkan filter PENCARIAN terlebih dahulu
+    if (searchTerm) {
+      const lowerCaseSearchTerm = searchTerm.toLowerCase();
+      allData = allData.filter(item => { // Filter pada objek 'item'
+        const row = item.data; // Ambil data baris dari objek
+        const kodeBarang = String(row[1] || '').toLowerCase(); // Kolom B: Kode Barang
+        const namaBarang = String(row[2] || '').toLowerCase(); // Kolom C: Nama Barang
+        return kodeBarang.includes(lowerCaseSearchTerm) || namaBarang.includes(lowerCaseSearchTerm);
       });
     }
+
+    // 2. Terapkan filter GUDANG setelahnya
+    if (filterGudang) {
+      allData = allData.filter(item => item.data[5] === filterGudang); // Kolom F: Gudang
+    }
+    
+    const totalData = allData.length;
+    const totalPages = Math.ceil(totalData / pageSize) || 1;
+
+    // 3. Lakukan paginasi pada data final yang sudah difilter
+    const startIndex = (page - 1) * pageSize;
+    const pagedDataObjects = allData.slice(startIndex, startIndex + pageSize);
+    
+    // 4. Format data untuk dikirim ke client
+    // Ambil data baris dari objek dan tambahkan nomor baris asli di akhir
+    const pagedData = pagedDataObjects.map(item => {
+      const row = item.data;
+      if (row[0] && row[0] instanceof Date) {
+        row[0] = Utilities.formatDate(row[0], spreadsheetTimezone, "yyyy-MM-dd");
+      }
+      row.push(item.originalIndex); // Tambahkan nomor baris asli ke akhir array
+      return row;
+    });
+
+    return { 
+      data: pagedData,
+      currentPage: Number(page),
+      totalPages: totalPages,
+      totalData: totalData
+    };
+  } catch (e) {
+    console.error("Error in getDataBarangKeluar:", e);
+    throw new Error(e.message);
   }
-  return itemsFound.length > 0 ? itemsFound : null;
 }
 
-// 3. PINDAH SEBAGIAN (Partial Move)
-function processPutawayPartial(moveData) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sBatch = ss.getSheetByName(CONFIG.SHEET_NAMES.BATCH_PRODUCT);
-  const sLog = ss.getSheetByName(CONFIG.SHEET_NAMES.PUTAWAY_LOG);
-  const BM = CONFIG.BATCH_MAP;
 
+
+function hapusBarangKeluar(rowIndex) {
   try {
-    const finder = sBatch.getRange("A:A").createTextFinder(moveData.idBatch).findNext();
-    if (!finder) throw new Error("Barang tidak ditemukan!");
-    
-    const rowIndex = finder.getRow();
-    const rowData = sBatch.getRange(rowIndex, 1, 1, CONFIG.HEADERS.BATCH).getValues()[0];
-    const currentQty = Number(rowData[BM.QTY]);
-    const moveQty = Number(moveData.qtyMove);
-    
-    if (moveQty > currentQty) throw new Error("Stok tidak cukup!");
-    
-    sBatch.getRange(rowIndex, BM.QTY + 1).setValue(currentQty - moveQty);
-    sBatch.getRange(rowIndex, BM.LAST_UPDATE + 1).setValue(new Date());
+    const keluarSheet = ss.getSheetByName("ProdukKeluar"); [132]
+    const produkSheet = ss.getSheetByName("DataProduk"); [132]
 
-    _updateStock(sBatch, { 
-      kodeBarang: rowData[BM.KODE], namaProduk: rowData[BM.NAMA], brand: rowData[BM.BRAND],
-      qtyMasuk: moveQty, typeLokasi: moveData.targetTypeLoc, lokasi: moveData.targetLoc,
-      noBatch: rowData[BM.BATCH], expiredDate: rowData[BM.EXP], typeSticker: rowData[BM.STICKER],
-      sizeCover: rowData[BM.COVER], size: rowData[BM.SIZE]
+    const dataDihapus = keluarSheet.getRange(rowIndex, 1, 1, 8).getValues()[0]; [132]
+    const kodeBarang = dataDihapus[1]; [133]
+    const jumlahDikembalikan = Number(dataDihapus[7]); [133]
+
+    if (!kodeBarang || isNaN(jumlahDikembalikan)) { [134]
+      throw new Error("Data pada baris yang akan dihapus tidak valid."); [134]
+    }
+
+    keluarSheet.deleteRow(rowIndex); [135]
+
+    const dataProduk = produkSheet.getDataRange().getValues(); [135]
+    let barisProdukUpdate = -1; [135]
+    
+    // **FIX:** Perbandingan yang andal
+    for (let i = 1; i < dataProduk.length; i++) {
+      if (dataProduk[i][0] && dataProduk[i][0].toString().trim().toLowerCase() === kodeBarang.toString().trim().toLowerCase()) {
+        barisProdukUpdate = i + 1;
+        break;
+      }
+    }
+
+    if (barisProdukUpdate === -1) { [137]
+      throw new Error(`Transaksi keluar telah dihapus, tetapi produk ${kodeBarang} tidak ditemukan untuk penyesuaian stok.`); [137]
+    }
+
+    const stokSaatIni = produkSheet.getRange(barisProdukUpdate, 7).getValue(); [138]
+    const stokBaru = stokSaatIni + jumlahDikembalikan; [138]
+    produkSheet.getRange(barisProdukUpdate, 7).setValue(stokBaru); [138]
+
+    const stokMinimal = produkSheet.getRange(barisProdukUpdate, 5).getValue(); [139]
+    const statusBaru = stokBaru <= stokMinimal ? "Barang Kosong" : "Tersedia"; [139]
+    produkSheet.getRange(barisProdukUpdate, 6).setValue(statusBaru); [140]
+
+    return "Data barang keluar berhasil dihapus dan stok telah dikembalikan."; [141]
+  } catch (e) {
+    console.error("Gagal hapus barang keluar:", e); [142]
+    throw new Error("Server error: " + e.message); [142]
+  }
+}
+
+
+
+function updateBarangKeluar(rowIndex, newData) {
+  try {
+    const keluarSheet = ss.getSheetByName("ProdukKeluar"); [1]
+    const produkSheet = ss.getSheetByName("DataProduk"); [1]
+
+    const dataLama = keluarSheet.getRange(rowIndex, 1, 1, 8).getValues()[0]; [143]
+    const kodeBarang = dataLama[1]; [144]
+    const jumlahLama = Number(dataLama[7]); [144]
+    const jumlahBaru = Number(newData.jumlah); [144]
+    const selisih = jumlahBaru - jumlahLama; [145]
+
+    keluarSheet.getRange(rowIndex, 1).setValue(newData.tglKeluar); [146]
+    keluarSheet.getRange(rowIndex, 6).setValue(newData.gudang); [146]
+    keluarSheet.getRange(rowIndex, 7).setValue(newData.penanggungJawab); [146]
+    keluarSheet.getRange(rowIndex, 8).setValue(newData.jumlah); [146]
+
+    const dataProduk = produkSheet.getDataRange().getValues(); [147]
+    let barisProdukUpdate = -1; [147]
+    
+    for (let i = 1; i < dataProduk.length; i++) {
+      if (dataProduk[i][0] && dataProduk[i][0].toString().trim().toLowerCase() === kodeBarang.toString().trim().toLowerCase()) {
+        barisProdukUpdate = i + 1;
+        break;
+      }
+    }
+
+    if (barisProdukUpdate === -1) throw new Error("Produk terkait tidak ditemukan."); [149]
+
+    const stokSaatIni = produkSheet.getRange(barisProdukUpdate, 7).getValue(); [149]
+    const stokTerkoreksi = stokSaatIni - selisih; [150]
+    produkSheet.getRange(barisProdukUpdate, 7).setValue(stokTerkoreksi); [150]
+
+    const stokMinimal = produkSheet.getRange(barisProdukUpdate, 5).getValue(); [151]
+    const statusBaru = stokTerkoreksi <= stokMinimal ? "Barang Kosong" : "Tersedia"; [151]
+    produkSheet.getRange(barisProdukUpdate, 6).setValue(statusBaru); [151]
+
+    return "Data barang keluar berhasil diperbarui."; [152]
+  } catch (e) {
+    console.error("Gagal update barang keluar:", e); [153]
+    throw new Error("Server error: " + e.message); [153]
+  }
+}
+
+
+function getGudangByProduk(kodeBarang) {
+  try {
+    const masukSheet = ss.getSheetByName("ProdukMasuk");
+    const dataMasuk = masukSheet.getDataRange().getValues();
+    const gudangSet = new Set(); // Menggunakan Set untuk otomatis menangani data unik
+
+    // Loop dari baris kedua untuk melewati header
+    for (let i = 1; i < dataMasuk.length; i++) {
+      // PERUBAHAN UTAMA: Ubah kedua nilai menjadi String dan hapus spasi sebelum membandingkan
+      // Ini memastikan perbandingan akurat meskipun tipe datanya berbeda (Number vs String)
+      if (dataMasuk[i][1].toString().trim() === kodeBarang.toString().trim()) {
+        gudangSet.add(dataMasuk[i][6]); // Tambahkan gudang (kolom G, indeks 6) ke Set
+      }
+    }
+    
+    // Kembalikan sebagai array
+    return Array.from(gudangSet);
+
+  } catch (e) {
+    console.error("Error di getGudangByProduk: ", e);
+    throw new Error("Gagal mengambil daftar gudang untuk produk ini.");
+  }
+}
+
+
+
+// FUNGSI STOK OPNAME
+
+
+function getProdukUntukOpname(kodeBarang) {
+  try {
+    const produkData = getProdukByBarcode(kodeBarang); // Kita gunakan lagi fungsi yang sudah ada
+    if (!produkData) {
+      return null;
+    }
+    return {
+      nama: produkData.nama,
+      stokSistem: produkData.stok
+    };
+  } catch (e) {
+    console.error("Error di getProdukUntukOpname: ", e);
+    return null;
+  }
+}
+
+/**
+ * Menyimpan hasil stok opname ke sheet dan menyesuaikan stok jika perlu.
+ */
+function simpanHasilOpname(opnameData) {
+  try {
+    const opnameSheet = ss.getSheetByName("StokOpname");
+    const produkSheet = ss.getSheetByName("DataProduk");
+    const {
+      tanggal,
+      kodeBarang,
+      namaBarang,
+      stokSistem,
+      stokFisik,
+      petugas,
+      catatan,
+      lakukanPenyesuaian
+    } = opnameData;
+
+    const selisih = Number(stokFisik) - Number(stokSistem);
+    const statusPenyesuaian = lakukanPenyesuaian ? "Stok Disesuaikan" : "Tidak Disesuaikan";
+
+    // 1. Catat aktivitas opname
+    opnameSheet.appendRow([
+      tanggal, kodeBarang, namaBarang, stokSistem, stokFisik,
+      selisih, statusPenyesuaian, petugas, catatan
+    ]);
+
+    // 2. Jika checkbox penyesuaian dicentang, update stok di DataProduk
+    if (lakukanPenyesuaian) {
+      const dataProduk = produkSheet.getDataRange().getValues();
+      let rowIndex = -1;
+      for (let i = 1; i < dataProduk.length; i++) {
+        if (dataProduk[i][0].toString().trim().toLowerCase() === kodeBarang.toString().trim().toLowerCase()) {
+          rowIndex = i + 1;
+          break;
+        }
+      }
+
+      if (rowIndex !== -1) {
+        produkSheet.getRange(rowIndex, 7).setValue(stokFisik); // Update kolom Stok (G)
+        
+        // Update juga status ketersediaan
+        const stokMinimal = produkSheet.getRange(rowIndex, 5).getValue();
+        const statusBaru = Number(stokFisik) <= stokMinimal ? "Barang Kosong" : "Tersedia";
+        produkSheet.getRange(rowIndex, 6).setValue(statusBaru); // Update kolom Status (F)
+      } else {
+        throw new Error("Gagal menemukan produk untuk disesuaikan.");
+      }
+    }
+    
+    return { success: true, message: "Hasil stok opname berhasil disimpan." };
+
+  } catch (e) {
+    console.error("Error di simpanHasilOpname: ", e);
+    return { success: false, message: e.message };
+  }
+}
+
+
+// FUngsi ambil data stok opname
+function getDataStokOpname(page = 1, pageSize = 10, searchTerm = '', filterPenyesuaian = '') {
+   try {
+    const opnameSheet = ss.getSheetByName("StokOpname");
+    const lastRow = opnameSheet.getLastRow();
+    if (lastRow <= 1) {
+      return { data: [], currentPage: 1, totalPages: 0, totalData: 0 };
+    }
+    
+    let allData = opnameSheet.getRange(2, 1, lastRow - 1, 10).getValues();
+
+    let needsUpdate = false;
+    allData.forEach((row, index) => {
+      if (!row[0]) {
+        row[0] = 'OPN-' + new Date().getTime() + '-' + (index + 2);
+        opnameSheet.getRange(index + 2, 1).setValue(row[0]);
+        needsUpdate = true;
+      }
+    });
+    if (needsUpdate) SpreadsheetApp.flush();
+
+    if (searchTerm) {
+      const lowerCaseSearchTerm = searchTerm.toLowerCase();
+      allData = allData.filter(row => {
+        const kodeBarang = String(row[2] || '').toLowerCase();
+        const namaBarang = String(row[3] || '').toLowerCase();
+        return kodeBarang.includes(lowerCaseSearchTerm) || namaBarang.includes(lowerCaseSearchTerm);
+      });
+    }
+    
+    if (filterPenyesuaian) {
+      allData = allData.filter(row => row[7] === filterPenyesuaian);
+    }
+
+    allData.sort((a, b) => new Date(b[1]) - new Date(a[1]));
+    
+    const totalData = allData.length;
+    const totalPages = Math.ceil(totalData / pageSize) || 1;
+    const startIndex = (page - 1) * pageSize;
+    const pagedData = allData.slice(startIndex, startIndex + pageSize);
+
+    const spreadsheetTimezone = ss.getSpreadsheetTimeZone();
+    const formattedData = pagedData.map(row => {
+        if (row[1] && row[1] instanceof Date) {
+            row[1] = Utilities.formatDate(row[1], spreadsheetTimezone, "yyyy-MM-dd");
+        }
+        return row;
     });
 
-    sLog.appendRow([_genId(sLog, "PW-"), new Date(), "Admin", rowData[BM.KODE], rowData[BM.NAMA], rowData[BM.BATCH], rowData[BM.EXP], rowData[BM.STICKER], rowData[BM.COVER], rowData[BM.SIZE], rowData[BM.LOKASI], moveData.targetLoc, moveQty, "PARTIAL MOVE"]);
-    return { success: true, message: "Berhasil pindah eceran!" };
-  } catch (e) { return { success: false, message: e.message }; }
+    return { 
+      data: formattedData,
+      currentPage: Number(page),
+      totalPages: totalPages,
+      totalData: totalData
+    };
+   } catch (e) {
+    console.error("Error di getDataStokOpname:", e);
+    throw new Error(e.message);
+  }
 }
 
-// 4. PINDAH SEMUA ISI RAK (Location Move All) - BARU!
-function processLocationMoveAll(moveData) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sBatch = ss.getSheetByName(CONFIG.SHEET_NAMES.BATCH_PRODUCT);
-  const sLog = ss.getSheetByName(CONFIG.SHEET_NAMES.PUTAWAY_LOG);
-  const BM = CONFIG.BATCH_MAP;
-
+// Fungsi simpan stokopname
+function simpanHasilOpname(opnameData) {
   try {
-    moveData.items.forEach(item => {
-      const rowData = sBatch.getRange(item.rowIndex, 1, 1, CONFIG.HEADERS.BATCH).getValues()[0];
-      const oldLoc = rowData[BM.LOKASI];
+    const opnameSheet = ss.getSheetByName("StokOpname");
+    const produkSheet = ss.getSheetByName("DataProduk");
+    const {
+      tanggal, kodeBarang, namaBarang, stokSistem,
+      stokFisik, petugas, catatan, lakukanPenyesuaian
+    } = opnameData;
 
-      sBatch.getRange(item.rowIndex, BM.TYPE_LOC + 1).setValue(moveData.targetTypeLoc);
-      sBatch.getRange(item.rowIndex, BM.LOKASI + 1).setValue(moveData.targetLoc);
-      sBatch.getRange(item.rowIndex, BM.LAST_UPDATE + 1).setValue(new Date());
+    const idOpname = 'OPN-' + new Date().getTime();
+    const selisih = Number(stokFisik) - Number(stokSistem);
+    const statusPenyesuaian = lakukanPenyesuaian ? "Stok Disesuaikan" : "Tidak Disesuaikan";
+    
+    opnameSheet.appendRow([
+      idOpname, tanggal, kodeBarang, namaBarang, stokSistem, stokFisik,
+      selisih, statusPenyesuaian, petugas, catatan
+    ]);
 
-      sLog.appendRow([_genId(sLog, "PW-LOC-"), new Date(), "Admin", rowData[BM.KODE], rowData[BM.NAMA], rowData[BM.BATCH], rowData[BM.EXP], rowData[BM.STICKER], rowData[BM.COVER], rowData[BM.SIZE], oldLoc, moveData.targetLoc, rowData[BM.QTY], "LOCATION MOVE ALL"]);
-    });
-    return { success: true, message: "Satu rak berhasil dikosongkan!" };
-  } catch (e) { return { success: false, message: e.message }; }
+    if (lakukanPenyesuaian) {
+      const dataProduk = produkSheet.getDataRange().getValues();
+      let rowIndex = -1;
+      for (let i = 1; i < dataProduk.length; i++) {
+        if (dataProduk[i][0] && dataProduk[i][0].toString().trim().toLowerCase() === kodeBarang.toString().trim().toLowerCase()) {
+          rowIndex = i + 1;
+          break;
+        }
+      }
+      if (rowIndex !== -1) {
+        produkSheet.getRange(rowIndex, 7).setValue(stokFisik);
+        const stokMinimal = produkSheet.getRange(rowIndex, 5).getValue();
+        const statusBaru = Number(stokFisik) <= stokMinimal ? "Barang Kosong" : "Tersedia";
+        produkSheet.getRange(rowIndex, 6).setValue(statusBaru);
+      } else {
+        throw new Error("Gagal menemukan produk untuk disesuaikan.");
+      }
+    }
+    return { success: true, message: "Hasil stok opname berhasil disimpan." };
+  } catch (e) {
+    console.error("Error di simpanHasilOpname: ", e);
+    return { success: false, message: e.message };
+  }
 }
 
-// 5. LIHAT RIWAYAT
-function getPutawayHistory() {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.SHEET_NAMES.PUTAWAY_LOG);
-  if (!sheet || sheet.getLastRow() < 2) return [];
-  const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 14).getDisplayValues();
-  return data.map(r => ({ id: r[0], tgl: r[1], kode: r[3], nama: r[4], batch: r[5], asal: r[10], tujuan: r[11], qty: r[12], mode: r[13] })).reverse();
+
+function hapusRiwayatOpname(idOpname) {
+  try {
+    const opnameSheet = ss.getSheetByName("StokOpname");
+    const data = opnameSheet.getDataRange().getValues();
+    let rowIndex = -1;
+
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0] === idOpname) {
+        rowIndex = i + 1;
+        break;
+      }
+    }
+
+    if (rowIndex === -1) {
+      throw new Error("Riwayat opname tidak ditemukan.");
+    }
+    
+    opnameSheet.deleteRow(rowIndex);
+    
+    return "Riwayat berhasil dihapus.";
+  } catch(e) {
+    console.error("Gagal Hapus Riwayat Opname: ", e);
+    throw new Error("Gagal menghapus riwayat: " + e.message);
+  }
+}
+
+
+function getLaporanOpname(tanggalMulai, tanggalSelesai) {
+  try {
+    const sheet = ss.getSheetByName("StokOpname");
+    const lastRow = sheet.getLastRow();
+    if (lastRow <= 1) return [];
+
+    const data = sheet.getRange(2, 1, lastRow - 1, 10).getValues();
+
+    // Membuat objek tanggal yang andal dari input
+    const partsMulai = tanggalMulai.split('-');
+    const startDate = new Date(partsMulai[0], partsMulai[1] - 1, partsMulai[2]);
+    startDate.setHours(0, 0, 0, 0);
+
+    const partsSelesai = tanggalSelesai.split('-');
+    const endDate = new Date(partsSelesai[0], partsSelesai[1] - 1, partsSelesai[2]);
+    endDate.setHours(23, 59, 59, 999);
+
+    // Filter data berdasarkan rentang tanggal
+    const filteredData = data.filter(function(row) {
+      if (!row[1] || !(row[1] instanceof Date)) return false;
+      const rowDate = new Date(row[1]);
+      return rowDate >= startDate && rowDate <= endDate;
+    });
+
+    // Urutkan berdasarkan tanggal terbaru
+    filteredData.sort((a, b) => new Date(b[1]) - new Date(a[1]));
+
+    // Format tanggal sebelum dikirim, tanpa mengubah urutan kolom
+    const spreadsheetTimezone = ss.getSpreadsheetTimeZone();
+    return filteredData.map(row => {
+      const newRow = [...row]; // Buat salinan agar data asli tidak termodifikasi
+      if (newRow[1] instanceof Date) {
+        newRow[1] = Utilities.formatDate(newRow[1], spreadsheetTimezone, "yyyy-MM-dd");
+      }
+      return newRow;
+    });
+
+  } catch (e) {
+    console.error("Error in getLaporanOpname:\n" + e.stack);
+    throw new Error("Terjadi kesalahan saat mengambil data: " + e.message);
+  }
+}
+
+
+function exportLaporanToExcel(data, namaFile) {
+  try {
+    let csvContent = "ID Opname,Tanggal,Kode Barang,Nama Barang,Stok Sistem,Stok Fisik,Selisih,Status Penyesuaian,Petugas,Catatan\n";
+    data.forEach(function(row) {
+      let csvRow = row.map(item => `"${String(item || '').replace(/"/g, '""')}"`).join(',');
+      csvContent += csvRow + "\n";
+    });
+
+    const blob = Utilities.newBlob(csvContent, MimeType.CSV, namaFile + ".csv");
+    return {
+      url: "data:text/csv;charset=utf-8," + encodeURIComponent(csvContent),
+      filename: namaFile + ".csv"
+    };
+  } catch(e) {
+    throw new Error("Gagal membuat file export: " + e.message);
+  }
+}
+
+
+
+function getLaporanPerBarang(kodeBarang, tanggalMulai, tanggalSelesai) {
+  try {
+    const produkData = getProdukByBarcode(kodeBarang);
+    if (!produkData) {
+      throw new Error(`Produk dengan kode "${kodeBarang}" tidak ditemukan.`);
+    }
+
+    const masukSheet = ss.getSheetByName("ProdukMasuk");
+    const keluarSheet = ss.getSheetByName("ProdukKeluar");
+    const dataMasuk = masukSheet.getLastRow() > 1 ? masukSheet.getRange(2, 1, masukSheet.getLastRow() - 1, 7).getValues() : [];
+    const dataKeluar = keluarSheet.getLastRow() > 1 ? keluarSheet.getRange(2, 1, keluarSheet.getLastRow() - 1, 8).getValues() : [];
+
+    let semuaTransaksi = [];
+
+    // Kumpulkan semua transaksi (masuk dan keluar) untuk barang ini
+    dataMasuk.forEach(row => {
+      if (row[1] && row[1].toString().trim().toLowerCase() === kodeBarang.toLowerCase()) {
+        semuaTransaksi.push({ tanggal: new Date(row[0]), keterangan: 'Barang Masuk', masuk: row[5], keluar: 0 });
+      }
+    });
+    dataKeluar.forEach(row => {
+      if (row[1] && row[1].toString().trim().toLowerCase() === kodeBarang.toLowerCase()) {
+        semuaTransaksi.push({ tanggal: new Date(row[0]), keterangan: 'Barang Keluar via ' + row[5], masuk: 0, keluar: row[7] });
+      }
+    });
+
+    // Urutkan semua transaksi berdasarkan tanggal, dari yang paling lama ke terbaru
+    semuaTransaksi.sort((a, b) => a.tanggal - b.tanggal);
+
+    // Hitung Stok Awal sebelum rentang tanggal yang dipilih
+    const startDate = new Date(tanggalMulai);
+    startDate.setHours(0, 0, 0, 0);
+    
+    let stokAwal = 0;
+    semuaTransaksi.forEach(t => {
+      if (t.tanggal < startDate) {
+        stokAwal += t.masuk - t.keluar;
+      }
+    });
+
+    // Filter transaksi sesuai rentang tanggal yang dipilih
+    const endDate = new Date(tanggalSelesai);
+    endDate.setHours(23, 59, 59, 999);
+
+    const transaksiTerfilter = semuaTransaksi.filter(t => t.tanggal >= startDate && t.tanggal <= endDate);
+
+    // Hitung Sisa Stok berjalan untuk transaksi yang sudah difilter
+    let sisaStokBerjalan = stokAwal;
+    const hasilAkhir = transaksiTerfilter.map(t => {
+      sisaStokBerjalan += t.masuk - t.keluar;
+      return {
+        tanggal: Utilities.formatDate(t.tanggal, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd"),
+        keterangan: t.keterangan,
+        masuk: t.masuk,
+        keluar: t.keluar,
+        sisaStok: sisaStokBerjalan
+      };
+    });
+
+    return {
+      success: true,
+      data: {
+        infoProduk: { kode: produkData.kode, nama: produkData.nama },
+        stokAwal: stokAwal,
+        transaksi: hasilAkhir
+      }
+    };
+
+  } catch (e) {
+    console.error("Error di getLaporanPerBarang: " + e.message);
+    return { success: false, error: e.message };
+  }
 }
